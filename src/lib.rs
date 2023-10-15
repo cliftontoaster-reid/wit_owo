@@ -12,11 +12,12 @@
 //!
 //! ```
 //! use wit_owo::prelude::*;
+//! use std::env;
 //!
 //! #[tokio::main]
 //! async fn main() {
 //!   dotenv::dotenv().ok();
-//!   let owo = owo_whats_this::model::client::Client::new(&dotenv::var("wit_ai").expect("For testing a .env must have wit_ai set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
+//!   let owo = Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
 //!
 //!   let uwu = owo
 //!     .message("OwO what's this", DynamicEntities::default())

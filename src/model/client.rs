@@ -15,6 +15,7 @@ impl Client {
   ///
   /// ```
   /// use wit_owo::prelude::*;
+  /// use std::env;
   ///
   /// let rawr = Client::new("owo fancy");
   /// ```

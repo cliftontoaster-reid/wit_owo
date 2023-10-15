@@ -24,11 +24,12 @@ impl Message {
   ///
   /// ```
   /// use wit_owo::prelude::*;
+  /// use std::env;
   ///
   /// #[tokio::main]
   /// async fn main() {
   ///   dotenv::dotenv().ok();
-  ///   let owo = owo_whats_this::model::client::Client::new(&dotenv::var("wit_ai").expect("For testing a .env must have wit_ai set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
+  ///   let owo = Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
   ///
   ///   let uwu = owo
   ///     .message("OwO what's this", DynamicEntities::default())
@@ -54,18 +55,19 @@ impl Message {
   ///
   /// ```
   /// use wit_owo::prelude::*;
+  /// use std::env;
   ///
   /// #[tokio::main]
   /// async fn main() {
   ///   dotenv::dotenv().ok();
-  ///   let owo = owo_whats_this::model::client::Client::new(&dotenv::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
+  ///   let owo = Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
   ///
   ///   let uwu = owo
   ///     .message("OwO what's this", DynamicEntities::default())
   ///     .await
   ///     .unwrap();
   ///
-  ///   let trait_name = uwu.get_trait("sexy").unwrap().get(0).unwrap().value;
+  ///   let trait_name = &uwu.get_trait("sexy").unwrap().get(0).unwrap().value;
   /// }
   /// ```
   pub fn get_trait(&self, name: &str) -> Option<&Vec<Trait>> {
@@ -84,18 +86,19 @@ impl Message {
   ///
   /// ```
   /// use wit_owo::prelude::*;
+  /// use std::env;
   ///
   /// #[tokio::main]
   /// async fn main() {
   ///   dotenv::dotenv().ok();
-  ///   let owo = owo_whats_this::model::client::Client::new(&dotenv::var("wit_ai").expect("For testing a .env must have wit_ai set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
+  ///   let owo = Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
   ///
   ///   let uwu = owo
   ///     .message("OwO what's this", DynamicEntities::default())
   ///     .await
   ///     .unwrap();
   ///
-  ///   let trait_name = uwu.get_entity("owo:owo").unwrap().get(0).unwrap().value;
+  ///   let trait_name = &uwu.get_entity("owo:owo").unwrap().get(0).unwrap().value;
   /// }
   /// ```
   pub fn get_entity(&self, name: &str) -> Option<&Vec<Entity>> {
@@ -176,7 +179,9 @@ pub struct WitTrait {
 
 #[cfg(test)]
 mod tests {
-  use super::*;
+  use std::env;
+
+use super::*;
   use crate::{self as owo_whats_this, model::DynamicEntities};
   use chrono::{Datelike, Timelike};
   use dotenv;
@@ -210,7 +215,7 @@ mod tests {
   #[tokio::test]
   async fn api_message() {
     dotenv::dotenv().ok();
-    let owo = owo_whats_this::model::client::Client::new(&dotenv::var("wit_ai").expect("For testing a .env must have wit_ai set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
+    let owo = owo_whats_this::model::client::Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
 
     let uwu = owo
       .message("OwO what's this", DynamicEntities::default())
