@@ -159,12 +159,31 @@ pub struct DateValue {
 
 impl DateValue {
   /// Parses the ISO 8601 DateTime to a NaiveDateTime.
+  ///
+  /// # Arguments
+  ///
+  /// None.
+  ///
+  /// # Returns
+  ///
+  /// - Chrono's UTC datetime.
+  ///
   pub fn to_utc(&self) -> NaiveDateTime {
     DateTime::parse_from_str(&self.value, "%Y-%m-%dT%H:%M:%S%.3f%:z")
       .unwrap()
       .naive_utc()
   }
-  /// Parses the ISO 8601 date time to a Fixe dOffset DateTime.
+
+  /// Parses the ISO 8601 date time to a Fixed Offset DateTime.
+  ///
+  /// # Arguments
+  ///
+  /// None.
+  ///
+  /// # Returns
+  ///
+  /// - Chrono's datetime with the data's timezone as own..
+  ///
   pub fn to_datetime(&self) -> DateTime<FixedOffset> {
     DateTime::parse_from_str(&self.value, "%Y-%m-%dT%H:%M:%S%.3f%:z").unwrap()
   }
@@ -180,8 +199,7 @@ pub struct WitTrait {
 #[cfg(test)]
 mod tests {
   use std::env;
-
-use super::*;
+  use super::*;
   use crate::{self as owo_whats_this, model::DynamicEntities};
   use chrono::{Datelike, Timelike};
   use dotenv;

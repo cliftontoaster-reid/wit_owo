@@ -1,0 +1,68 @@
+# Objectives
+
+Because that way I can more easily remember what I still have to do, and also a little about in what order I want to do it.
+
+- [ ] APIs
+  - [ ] message
+    - [x] structs
+    - [ ] blocking API
+    - [x] asynchronous API
+  - [ ] speech
+    - [ ] structs
+    - [ ] blocking API
+    - [ ] asynchronous API
+    - [ ] audio possessing and conversion 
+  - [ ] composer
+    - [ ] audio
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
+    - [ ] text
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
+  - [ ] dictation
+    - [ ] structs
+    - [ ] blocking API
+    - [ ] asynchronous API
+  - [ ] synthesize
+    - [ ] structs
+    - [ ] blocking API
+    - [ ] asynchronous API
+  - [ ] voices
+    - [ ] structs
+    - [ ] blocking API
+    - [ ] asynchronous API
+  - [ ] languages
+    - [ ] structs
+    - [ ] blocking API
+    - [ ] asynchronous API
+  - [ ] server management
+    - [ ] intents
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
+    - [ ] entities
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
+    - [ ] traits
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
+    - [ ] utterances
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
+    - [ ] apps
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
+    - [ ] export
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
+    - [ ] import
+      - [ ] structs
+      - [ ] blocking API
+      - [ ] asynchronous API
