@@ -14,11 +14,12 @@ The upcoming venture seeks to encompass a multitude of functionalities, spanning
 
 ```rust
 use wit_owo::prelude::*;
+use std::env;
 
 #[tokio::main]
 async fn main() {
   dotenv::dotenv().ok();
-  let owo = owo_whats_this::model::client::Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
+  let owo = Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
 
   let uwu = owo
     .message("OwO what's this", DynamicEntities::default())
@@ -41,3 +42,5 @@ I don't know where you live ***YET***. Anyway bye.
 <img src="https://pbs.twimg.com/media/EbxGWPSVcAADMPw?format=png&name=900x900" alt="Toaster with heart" style="width:200px;float: right;"/>
 
 Also yes, I use ChatGPT to rewrite my docs better because I'm a stupid toaster, now you all know my terrible secret.
+
+License: MIT OR Apache-2.0
