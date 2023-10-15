@@ -12,12 +12,94 @@ pub struct Message {
 }
 
 impl Message {
+  /// Get a trait by name and usage.
+  ///
+  /// # Arguments
+  ///
+  /// None
+  ///
+  /// # Returns
+  ///
+  /// - The specified intent if it exists.
+  ///
+  /// ```
+  /// use wit_owo::prelude::*;
+  ///
+  /// #[tokio::main]
+  /// async fn main() {
+  ///   dotenv::dotenv().ok();
+  ///   let owo = owo_whats_this::model::client::Client::new(&dotenv::var("wit_ai").expect("For testing a .env must have wit_ai set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
+  ///
+  ///   let uwu = owo
+  ///     .message("OwO what's this", DynamicEntities::default())
+  ///     .await
+  ///     .unwrap();
+  ///
+  ///   let intent = uwu.intent().unwrap();
+  /// }
+  /// ```
   pub fn intent(&self) -> Option<&Intent> {
     self.intents.get(0)
   }
 
+  /// Get a trait by name and usage.
+  ///
+  /// # Arguments
+  ///
+  /// - `name` - The name and usage of the trait.
+  ///
+  /// # Returns
+  ///
+  /// - The specified list of entities if it exists.
+  ///
+  /// ```
+  /// use wit_owo::prelude::*;
+  ///
+  /// #[tokio::main]
+  /// async fn main() {
+  ///   dotenv::dotenv().ok();
+  ///   let owo = owo_whats_this::model::client::Client::new(&dotenv::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
+  ///
+  ///   let uwu = owo
+  ///     .message("OwO what's this", DynamicEntities::default())
+  ///     .await
+  ///     .unwrap();
+  ///
+  ///   let trait_name = uwu.get_trait("sexy").unwrap().get(0).unwrap().value;
+  /// }
+  /// ```
   pub fn get_trait(&self, name: &str) -> Option<&Vec<Trait>> {
     self.traits.get(name)
+  }
+
+  /// Get an entity by name and usage, in the format 'name:usage'.
+  ///
+  /// # Arguments
+  ///
+  /// - `name` - The name and usage of the entity in the format 'name:usage'.
+  ///
+  /// # Returns
+  ///
+  /// - The specified list of entities if it exists.
+  ///
+  /// ```
+  /// use wit_owo::prelude::*;
+  ///
+  /// #[tokio::main]
+  /// async fn main() {
+  ///   dotenv::dotenv().ok();
+  ///   let owo = owo_whats_this::model::client::Client::new(&dotenv::var("wit_ai").expect("For testing a .env must have wit_ai set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
+  ///
+  ///   let uwu = owo
+  ///     .message("OwO what's this", DynamicEntities::default())
+  ///     .await
+  ///     .unwrap();
+  ///
+  ///   let trait_name = uwu.get_entity("owo:owo").unwrap().get(0).unwrap().value;
+  /// }
+  /// ```
+  pub fn get_entity(&self, name: &str) -> Option<&Vec<Entity>> {
+    self.entities.get(name)
   }
 }
 
