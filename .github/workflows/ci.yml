@@ -4,6 +4,7 @@ on: [pull_request, push]
 
 env:
   CARGO_TERM_COLOR: always
+  WIT_AI: ${{ secrets.WIT_AI }}
 
 jobs:
   build:
@@ -19,8 +20,6 @@ jobs:
             override: true
             components: rustfmt, clippy
       - name: Test with cargo
-        env:
-          WIT_AI: ${{ secrets.WIT_AI }}
         uses: actions-rs/cargo@v1
         with:
           command: test
