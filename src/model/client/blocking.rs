@@ -20,8 +20,7 @@ impl Client {
   /// use wit_owo::prelude::*;
   /// # use std::env;
   ///
-  /// #[tokio::main]
-  /// async fn main() {
+  /// fn main() {
   ///   # dotenv::dotenv().ok();
   ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
   ///   let owo_client = Client::new(&token);
@@ -29,7 +28,7 @@ impl Client {
   ///   # let entities = DynamicEntities::default();
   ///   # let text = "OwO what's this";
   ///   #
-  ///   # let response = owo_client.message(text, entities).await.unwrap();
+  ///   # let response = owo_client.blocking_message(text, entities).unwrap();
   ///   #
   ///   # assert_eq!(response.intent().unwrap().name, "uwu");
   ///   # assert_eq!(
@@ -45,8 +44,7 @@ impl Client {
   /// use wit_owo::prelude::*;
   /// # use std::env;
   ///
-  /// #[tokio::main]
-  /// async fn main() {
+  /// fn main() {
   ///   # dotenv::dotenv().ok();
   ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
   ///   # let owo_client = Client::new(&token);
@@ -54,7 +52,7 @@ impl Client {
   ///   let entities = DynamicEntities::default();
   ///   let text = "OwO what's this";
   ///   #
-  ///   # let response = owo_client.message(text, entities).await.unwrap();
+  ///   # let response = owo_client.blocking_message(text, entities).unwrap();
   ///   #
   ///   # assert_eq!(response.intent().unwrap().name, "uwu");
   ///   # assert_eq!(
@@ -69,8 +67,7 @@ impl Client {
   /// use wit_owo::prelude::*;
   /// # use std::env;
   ///
-  /// #[tokio::main]
-  /// async fn main() {
+  /// fn main() {
   ///   # dotenv::dotenv().ok();
   ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
   ///   # let owo_client = Client::new(&token);
@@ -78,7 +75,7 @@ impl Client {
   ///   # let entities = DynamicEntities::default();
   ///   # let text = "OwO what's this";
   ///   #
-  ///   let response = owo_client.message(text, entities).await.unwrap();
+  ///   let response = owo_client.blocking_message(text, entities).unwrap();
   ///   #
   ///   # assert_eq!(response.intent().unwrap().name, "uwu");
   ///   # assert_eq!(
