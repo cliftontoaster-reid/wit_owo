@@ -1,47 +1,12 @@
-#[cfg(feature = "blocking")]
-/// The blocking version of the API
-pub mod blocking;
-
+use super::Client;
 use crate::constants::MAX_MESSAGE_LENGTH;
-use reqwest::{Client as RequestClient, RequestBuilder};
+use crate::model::{DynamicEntities, WitError};
+use crate::prelude::Message;
+use reqwest::blocking::{Client as RequestClient, RequestBuilder};
 use serde_json::{from_str, Value};
 
-use super::{message::Message, DynamicEntities, WitError};
-
-/// Wit OwO client, the interface that will power your doom creations (hopefully).
-pub struct Client {
-  token: String,
-}
-
 impl Client {
-  /// Initializes a wit.ai client.
-  ///
-  /// Takes the client side token and returns the Wit OwO.
-  ///
-  /// ```
-  /// use wit_owo::prelude::*;
-  /// use std::env;
-  ///
-  /// let rawr = Client::new("owo fancy key");
-  /// ```
-  pub fn new(token: &str) -> Self {
-    Self {
-      token: token.to_owned(),
-    }
-  }
-
-  /// It's just an easier and less painful way to check if there were any errors.
-  fn extract_message(v: Value, s: &str) -> Result<Message, WitError> {
-    match v.as_object().unwrap().get("error") {
-      Some(_) => Err(from_str(s).unwrap()),
-      None => Ok(from_str(s).unwrap()),
-    }
-  }
-}
-
-#[cfg(feature = "tokio")]
-impl Client {
-  fn prepare_get_request(&self, uri: &str) -> RequestBuilder {
+  fn prepare_blocking_get_request(&self, uri: &str) -> RequestBuilder {
     RequestClient::new()
       .get(uri)
       .bearer_auth(self.token.clone())
@@ -124,7 +89,7 @@ impl Client {
   /// }
   /// ```
   /// Voila, bravo!
-  pub async fn message(
+  pub fn blocking_message(
     &self,
     text: &str,
     dyn_entities: DynamicEntities,
@@ -150,13 +115,12 @@ impl Client {
     }
 
     let uwu = self
-      .prepare_get_request("https://api.wit.ai/message")
+      .prepare_blocking_get_request("https://api.wit.ai/message")
       .query(&hihi)
       .send()
-      .await
       .unwrap();
 
-    let owo = uwu.text().await.unwrap();
+    let owo = uwu.text().unwrap();
     println!("{}", &owo);
     let v: Value = from_str(&owo).unwrap();
     Self::extract_message(v, &owo)
@@ -164,20 +128,18 @@ impl Client {
 }
 
 #[cfg(test)]
-#[cfg(feature = "tokio")]
 mod tests {
   use super::*;
   use std::env;
 
   #[tokio::test]
   #[should_panic]
-  async fn message_over() {
+  async fn blocking_message_over() {
     dotenv::dotenv().ok();
     let owo = Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
 
     owo
-      .message("Lorem ipsum dolor sidi amas doloro, tiel in amet amas esti loŝvortaĵo. Subskribo al bonaj gazetoj, eklaboro kaj brilas. Kaj aliaj, kaj la lingvo de Esp, estas ne nur la lingvo de Esp. En bona penso ĉiu homo batalas, dum brila, asimilas konataj ajn. Skatolo uzas kompleksajn skribaĵojn, ĉiu efiko estas malfacila. La forta manko de akiri ŝaltukon en brilanta ĉielo. Ne surtera forto, kaj penso estis, sed saĝa paŝo. La malnova ĉeestas sur la peza tavolo. Pafu ŝtonon al kiel libera, tiu tiel ankaŭ ŝajnas. Nur tre aperas super, aŭ tiuj mi. La paco de la instruado, ke alia lingvo kaj ekonomiaj demandoj. Kaj la lingvo de Esperanto, en sia forteco estas laŭdo kaj muziko. Post longa tago, ni estos la lastaj vivuloj. Tamen, kiam la malpli facile, kaj ekonomiaj demandoj.", DynamicEntities::default())
-      .await
-      .unwrap();
+            .blocking_message("Lorem ipsum dolor sidi amas doloro, tiel in amet amas esti loŝvortaĵo. Subskribo al bonaj gazetoj, eklaboro kaj brilas. Kaj aliaj, kaj la lingvo de Esp, estas ne nur la lingvo de Esp. En bona penso ĉiu homo batalas, dum brila, asimilas konataj ajn. Skatolo uzas kompleksajn skribaĵojn, ĉiu efiko estas malfacila. La forta manko de akiri ŝaltukon en brilanta ĉielo. Ne surtera forto, kaj penso estis, sed saĝa paŝo. La malnova ĉeestas sur la peza tavolo. Pafu ŝtonon al kiel libera, tiu tiel ankaŭ ŝajnas. Nur tre aperas super, aŭ tiuj mi. La paco de la instruado, ke alia lingvo kaj ekonomiaj demandoj. Kaj la lingvo de Esperanto, en sia forteco estas laŭdo kaj muziko. Post longa tago, ni estos la lastaj vivuloj. Tamen, kiam la malpli facile, kaj ekonomiaj demandoj.", DynamicEntities::default())
+            .unwrap();
   }
 }

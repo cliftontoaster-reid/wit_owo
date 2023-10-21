@@ -3,9 +3,9 @@
 Because that way I can more easily remember what I still have to do, and also a little about in what order I want to do it.
 
 - [ ] APIs
-  - [ ] message
+  - [x] message
     - [x] structs
-    - [ ] blocking API
+    - [x] blocking API
     - [x] asynchronous API
   - [ ] speech
     - [ ] structs
