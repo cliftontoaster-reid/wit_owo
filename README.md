@@ -1,16 +1,10 @@
 # wit_owo
 
-## Wit.owo
+This crate has a goal to simplify the access to the free Natural Language software wit.ai.
+Therefore, the solution found was creating a united library to manage all the API endpoints that this service provides.
 
-In light of the widely recognized influence of individuals within the furry community on the digital landscape, it comes as no surprise that an endeavor to enhance the Wit.ai library is in progress. What distinguishes this initiative from its predecessors? It isn't necessarily a matter of superior intellect, as I, for one, do not lay claim to exceptional intelligence. Rather, the distinction lies in the intention to comprehensively implement a diverse array of functions, a facet that certain existing libraries like 'witty' and 'wit_ai' have yet to fully embrace.
-
-You can begin with this example. It's currently up-to-date, and if I happen to forget to change it from time to time, you have my permission to raise an issue on GitHub with the following remark
-
-> You stinky furry, you forgot to change the example, stupid toaster!
-
-Rest assured, I won't take offense, it's really as a joke.
-
-The upcoming venture seeks to encompass a multitude of functionalities, spanning from text-to-speech to speech-to-text conversion, acknowledging the extensive spectrum of capabilities that this domain encompasses. The aspiration is to provide a holistic solution that caters to a wide array of requirements. Anticipate forthcoming enhancements designed to facilitate your digital experiences; for the time being, dedicated efforts are underway. Until we reconvene, I wish you a productive and enjoyable journey.
+If you are new to the Rust language, we recommend you starting with this example,
+before trying to play around with the amazing language Rust is.
 
 ```rust
 use wit_owo::prelude::*;
@@ -28,19 +22,18 @@ async fn main() {
 }
 ```
 
-Please note that this example only works with the following [wit.ai backup](https://github.com/cliftontoaster-reid/wit_owo/blob/e16df111153b8278746007a817bd0843222dd263/owo/wit_ai.zip).
+Note that this example only works with the following [wit.ai backup](https://github.com/cliftontoaster-reid/wit_owo/blob/e16df111153b8278746007a817bd0843222dd263/owo/wit_ai.zip).
 
 ---
 
-Now all of you cuties,
+If by any means, someone would like to help us with this project actively, we would love to work with others.
+Thought we think that corresponding to plan together features and more would be better for everyone.
+In that spirit for anyone willing to help, please contact the repertory's owner.
 
-take care of yourselves,
+Anyway, we hope a great day for anyone reading this.
 
-have a nice day, or night
-
-I don't know where you live ***YET***. Anyway bye.
 <img src="https://pbs.twimg.com/media/EbxGWPSVcAADMPw?format=png&name=900x900" alt="Toaster with heart" style="width:200px;float: right;"/>
 
-Also yes, I use ChatGPT to rewrite my docs better because I'm a stupid toaster, now you all know my terrible secret.
+---
 
-License: MIT OR Apache-2.0
+Licences: MIT OR Apache-2.0 according to your preferences.
