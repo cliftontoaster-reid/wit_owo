@@ -4,9 +4,10 @@ pub mod blocking;
 
 use crate::constants::MAX_MESSAGE_LENGTH;
 use crate::model::speech::{SpeechRequest, SpeechResponse};
+use crate::prelude::prepare_speech_response;
 use reqwest::{Client as RequestClient, RequestBuilder};
 use serde::Deserialize;
-use serde_json::{from_str, from_value, Deserializer, Value};
+use serde_json::{from_str, Deserializer, Value};
 
 use super::{message::Message, DynamicEntities, WitError};
 
@@ -171,29 +172,9 @@ impl Client {
       .await
       .unwrap();
 
-    let mut owo: Vec<SpeechResponse> = Vec::new();
     let murr = Deserializer::from_str(&uwu).into_iter::<Value>();
 
-    for u in murr {
-      let v: Value = u.unwrap();
-
-      match v.as_object().unwrap().get("error") {
-        None => {}
-        Some(_) => {
-          return Err(from_value(v).unwrap());
-        }
-      }
-      match v.as_object().unwrap().get("is_final") {
-        None => {
-          owo.push(SpeechResponse::Half(from_value(v).unwrap()));
-        }
-        Some(_) => {
-          owo.push(SpeechResponse::Full(from_value(v).unwrap()));
-        }
-      }
-    }
-
-    Ok(owo)
+    prepare_speech_response(murr)
   }
 
   /// It takes the text to analyse and dynamic entities if you need some.

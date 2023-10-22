@@ -1,7 +1,9 @@
 use crate::model::message::Trait;
 use crate::model::{Context, DynamicEntities};
-use crate::prelude::{Entity, Intent};
+use crate::prelude::{Entity, Intent, WitError};
 use serde::Deserialize;
+use serde_json::de::StrRead;
+use serde_json::{from_value, StreamDeserializer, Value};
 use std::collections::HashMap;
 
 /// The optional headers used for this request.
@@ -327,4 +329,32 @@ mod tests {
     );
     assert_eq!(uwu.get_trait("sexy").unwrap().get(0).unwrap().value, "very");
   }
+}
+
+/// Converts the JSON chunks to a [`Vec`] of [`SpeechResponse`]
+pub fn prepare_speech_response(
+  murr: StreamDeserializer<StrRead, Value>,
+) -> Result<Vec<SpeechResponse>, WitError> {
+  let mut owo: Vec<SpeechResponse> = Vec::new();
+
+  for u in murr {
+    let v: Value = u.unwrap();
+
+    match v.as_object().unwrap().get("error") {
+      None => {}
+      Some(_) => {
+        return Err(from_value(v).unwrap());
+      }
+    }
+    match v.as_object().unwrap().get("is_final") {
+      None => {
+        owo.push(SpeechResponse::Half(from_value(v).unwrap()));
+      }
+      Some(_) => {
+        owo.push(SpeechResponse::Full(from_value(v).unwrap()));
+      }
+    }
+  }
+
+  Ok(owo)
 }

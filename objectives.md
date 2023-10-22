@@ -8,10 +8,10 @@ Because that way we can more easily remember what we still have to do, and you c
     - [x] blocking API
     - [x] asynchronous API
   - [ ] speech
-    - [ ] structs
-    - [ ] blocking API
-    - [ ] asynchronous API
-    - [ ] audio possessing and conversion 
+    - [x] structs
+    - [x] blocking API
+    - [x] asynchronous API
+    - [ ] audio format conversion 
   - [ ] composer
     - [ ] audio
       - [ ] structs
