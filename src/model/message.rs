@@ -48,7 +48,7 @@ impl Message {
   /// }
   /// ```
   pub fn intent(&self) -> Option<&Intent> {
-    self.intents.get(0)
+    self.intents.first()
   }
 
   /// Get a trait by name and usage.
