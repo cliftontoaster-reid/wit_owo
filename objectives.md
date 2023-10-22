@@ -1,6 +1,6 @@
 # Objectives
 
-Because that way I can more easily remember what I still have to do, and also a little about in what order I want to do it.
+Because that way we can more easily remember what we still have to do, and you can know a little about in what order we want to do it.
 
 - [ ] APIs
   - [x] message

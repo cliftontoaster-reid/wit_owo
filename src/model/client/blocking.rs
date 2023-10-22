@@ -1,11 +1,12 @@
 use super::Client;
 use crate::constants::MAX_MESSAGE_LENGTH;
 use crate::model::{DynamicEntities, WitError};
-use crate::prelude::Message;
+use crate::prelude::*;
 use reqwest::blocking::{Client as RequestClient, RequestBuilder};
 use serde_json::{from_str, Value};
 
 impl Client {
+  /// It prepares a get request with bearer auth.
   fn prepare_blocking_get_request(&self, uri: &str) -> RequestBuilder {
     RequestClient::new()
       .get(uri)
@@ -120,7 +121,7 @@ impl Client {
     let owo = uwu.text().unwrap();
     println!("{}", &owo);
     let v: Value = from_str(&owo).unwrap();
-    Self::extract_message(v, &owo)
+    Self::extract(v, &owo)
   }
 }
 
