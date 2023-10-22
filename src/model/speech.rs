@@ -312,10 +312,10 @@ mod tests {
   }
 
   #[test]
-  #[cfg(feature = "blocking_owo")]
+  #[cfg(feature = "blocking")]
   fn blocking_api_message() {
     dotenv::dotenv().ok();
-    let owo = owo_whats_this::model::client::Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
+    let owo = Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
 
     let uwu = owo
       .blocking_message("OwO what's this", DynamicEntities::default())
