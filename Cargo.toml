@@ -7,6 +7,7 @@ description = "Finally, an adequate library for wit.ai in Rust."
 readme = "README.md"
 homepage = "https://github.com/cliftontoaster-reid/wit_owo"
 repository = "https://github.com/cliftontoaster-reid/wit_owo"
+documentation = "https://docs.rs/wit_owo/latest/wit_owo/"
 exclude = ["owo"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
