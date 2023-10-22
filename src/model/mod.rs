@@ -9,6 +9,7 @@ pub mod client;
 pub mod message;
 /// The speech APi structs.
 pub mod speech;
+/// The possible built values responses.
 pub mod values;
 
 #[derive(Debug, Deserialize)]

@@ -149,7 +149,11 @@ impl FullSpeechResponse {
   ///     .await
   ///     .unwrap();
   ///
-  ///   let intent = uwu.intent().unwrap();
+  ///   let full: &FullSpeechResponse = match uwu.last().unwrap() {
+  ///     SpeechResponse::Full(d) => d,
+  ///     SpeechResponse::Half(_) => unreachable!("Last should be final.")
+  ///   };
+  ///   let intent = full.intent().unwrap().name.clone();
   /// }
   /// ```
   pub fn intent(&self) -> Option<&Intent> {
@@ -189,7 +193,11 @@ impl FullSpeechResponse {
   ///     .await
   ///     .unwrap();
   ///
-  ///   let trait_name = &uwu.get_trait("sexy").unwrap().get(0).unwrap().value;
+  ///   let full: &FullSpeechResponse = match uwu.last().unwrap() {
+  ///     SpeechResponse::Full(d) => d,
+  ///     SpeechResponse::Half(_) => unreachable!("Last should be final.")
+  ///   };
+  ///   let trait_name = full.get_trait("sexy").unwrap().get(0).unwrap().value.clone();
   /// }
   /// ```
   pub fn get_trait(&self, name: &str) -> Option<&Vec<Trait>> {
@@ -229,7 +237,11 @@ impl FullSpeechResponse {
   ///     .await
   ///     .unwrap();
   ///
-  ///   let trait_name = &uwu.get_entity("owo:owo").unwrap().get(0).unwrap().value;
+  ///   let full: &FullSpeechResponse = match uwu.last().unwrap() {
+  ///     SpeechResponse::Full(d) => d,
+  ///     SpeechResponse::Half(_) => unreachable!("Last should be final.")
+  ///   };
+  ///   let trait_name = full.get_entity("owo:owo").unwrap().get(0).unwrap().value.clone();
   /// }
   /// ```
   pub fn get_entity(&self, name: &str) -> Option<&Vec<Entity>> {
@@ -284,7 +296,19 @@ mod tests {
       entities: Default::default(),
     };
     let audio = include_bytes!("../../owo/test.mp3");
-    let uwu = owo.speech(audio.to_vec(), options).await.unwrap();
+    let rawr = owo.speech(audio.to_vec(), options).await.unwrap();
+    let uwu = match rawr.last().unwrap() {
+      SpeechResponse::Full(d) => d,
+      SpeechResponse::Half(_) => unreachable!("Last should be final."),
+    };
+    assert_eq!(uwu.intent().unwrap().name, "uwu");
+    assert!(
+      (uwu.entities.get("owo:owo").unwrap().get(0).unwrap().value
+        == Some("what's this".to_string()))
+        | (uwu.entities.get("owo:owo").unwrap().get(0).unwrap().value
+          == Some("watch this".to_string()))
+    );
+    assert_eq!(uwu.get_trait("sexy").unwrap().get(0).unwrap().value, "very");
   }
 
   #[test]
