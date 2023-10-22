@@ -6,7 +6,7 @@ use crate::constants::MAX_MESSAGE_LENGTH;
 use crate::model::speech::{SpeechRequest, SpeechResponse};
 use reqwest::{Client as RequestClient, RequestBuilder};
 use serde::Deserialize;
-use serde_json::{from_str, Value};
+use serde_json::{from_str, from_value, Deserializer, Value};
 
 use super::{message::Message, DynamicEntities, WitError};
 
@@ -160,30 +160,35 @@ impl Client {
     audio: Vec<u8>,
     options: SpeechRequest,
   ) -> Result<Vec<SpeechResponse>, WitError> {
-    let mut uwu = self
+    let uwu = self
       .prepare_post_request("https://api.wit.ai/speech")
       .header("content-type", options.content_type.to_str())
       .body(audio)
       .send()
       .await
+      .unwrap()
+      .text()
+      .await
       .unwrap();
 
     let mut owo: Vec<SpeechResponse> = Vec::new();
-    while let Some(chunk) = uwu.chunk().await.unwrap() {
-      let s: String = String::from_utf8(chunk.to_vec()).unwrap();
-      let v: Value = from_str(&s).unwrap();
+    let murr = Deserializer::from_str(&uwu).into_iter::<Value>();
+
+    for u in murr {
+      let v: Value = u.unwrap();
+
       match v.as_object().unwrap().get("error") {
         None => {}
         Some(_) => {
-          return Err(from_str(&s).unwrap());
+          return Err(from_value(v).unwrap());
         }
       }
       match v.as_object().unwrap().get("is_final") {
         None => {
-          owo.push(SpeechResponse::Half(from_str(&s).unwrap()));
+          owo.push(SpeechResponse::Half(from_value(v).unwrap()));
         }
         Some(_) => {
-          owo.push(SpeechResponse::Full(from_str(&s).unwrap()));
+          owo.push(SpeechResponse::Full(from_value(v).unwrap()));
         }
       }
     }
