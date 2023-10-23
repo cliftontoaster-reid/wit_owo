@@ -1,6 +1,6 @@
-use serde_json::{Deserializer, Value};
-use crate::model::dictation::{DictationResponse, prepare_dictation_response};
+use crate::model::dictation::{prepare_dictation_response, DictationResponse};
 use crate::prelude::{Client, SpeechRequest, WitError};
+use serde_json::{Deserializer, Value};
 
 impl Client {
   /// It takes the audio to transcribe.
@@ -22,7 +22,7 @@ impl Client {
   ///   #   n: 0,
   ///   #   entities: Default::default(),
   ///   # };
-  ///   # let audio = include_bytes!("../../owo/test.mp3");
+  ///   # let audio = include_bytes!("../../../owo/test.mp3");
   ///   #
   ///   # let response = owo_client.blocking_dictation(audio.to_vec(), options).unwrap();
   /// }
@@ -47,7 +47,7 @@ impl Client {
   ///     n: 0,
   ///     entities: Default::default(),
   ///   };
-  ///   let audio = include_bytes!("../../owo/test.mp3");
+  ///   let audio = include_bytes!("../../../owo/test.mp3");
   ///   #
   ///   # let response = owo_client.blocking_dictation(audio.to_vec(), options).unwrap();
   /// }
@@ -69,7 +69,7 @@ impl Client {
   ///   #   n: 0,
   ///   #   entities: Default::default(),
   ///   # };
-  ///   # let audio = include_bytes!("../../owo/test.mp3");
+  ///   # let audio = include_bytes!("../../../owo/test.mp3");
   ///   #
   ///   let response = owo_client.blocking_dictation(audio.to_vec(), options).unwrap();
   /// }
@@ -91,7 +91,7 @@ impl Client {
   ///   #   n: 0,
   ///   #   entities: Default::default(),
   ///   # };
-  ///   # let audio = include_bytes!("../../owo/test.mp3");
+  ///   # let audio = include_bytes!("../../../owo/test.mp3");
   ///   #
   ///   # let response = owo_client.blocking_dictation(audio.to_vec(), options).unwrap();
   ///   let owo = response.last().unwrap();

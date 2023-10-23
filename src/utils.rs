@@ -1,14 +1,16 @@
+#[cfg(test)]
+/// It's for testing.
 pub fn levenshtein_distance(s1: &str, s2: &str) -> usize {
   let len1 = s1.chars().count();
   let len2 = s2.chars().count();
 
   let mut matrix = vec![vec![0; len2 + 1]; len1 + 1];
 
-  for i in 0..=len1 {
+  for i in 0..len1 {
     matrix[i][0] = i;
   }
 
-  for j in 0..=len2 {
+  for j in 0..len2 {
     matrix[0][j] = j;
   }
 

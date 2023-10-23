@@ -3,6 +3,9 @@ use crate::prelude::WitError;
 /// Wit.ai's messages limitations.
 pub const MAX_MESSAGE_LENGTH: usize = 280;
 
+/// Check the message for `INTERNAL_MESSAGE_LEN_OVER_LIMIT`.
+///
+/// Made to not reuse and write multiple times the same code.
 pub fn check_message(text: &str) -> Result<bool, WitError> {
   if text.len() > MAX_MESSAGE_LENGTH {
     return Err(WitError {
