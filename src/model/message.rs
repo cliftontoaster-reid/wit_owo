@@ -1,3 +1,7 @@
+/// The blocking version of message API.
+#[cfg(feature = "blocking")]
+pub mod blocking;
+
 use serde::Deserialize;
 use std::collections::HashMap;
 

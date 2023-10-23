@@ -7,3 +7,5 @@ pub mod constants;
 pub mod model;
 /// Includes what should be enough for basic usage.
 pub mod prelude;
+/// Some useful stuff.
+pub mod utils;

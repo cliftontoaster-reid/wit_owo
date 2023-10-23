@@ -11,7 +11,6 @@ Because that way we can more easily remember what we still have to do, and you c
     - [x] structs
     - [x] blocking API
     - [x] asynchronous API
-    - [ ] audio format conversion 
   - [ ] composer
     - [ ] audio
       - [ ] structs

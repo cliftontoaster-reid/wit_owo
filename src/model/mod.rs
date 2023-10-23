@@ -1,10 +1,11 @@
-use std::collections::HashMap;
-
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Client module.
 /// The main thing.
 pub mod client;
+/// The dictation API structs.
+pub mod dictation;
 /// The message API structs.
 pub mod message;
 /// The speech APi structs.
