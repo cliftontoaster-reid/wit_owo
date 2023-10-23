@@ -1,3 +1,7 @@
+/// Blocking version of the speech API.
+#[cfg(feature = "blocking")]
+pub mod blocking;
+
 use crate::model::message::Trait;
 use crate::model::{Context, DynamicEntities};
 use crate::prelude::{Entity, Intent, WitError};
@@ -279,6 +283,34 @@ pub struct SpeechToken {
   pub end: i32,
 }
 
+/// Converts the JSON chunks to a [`Vec`] of [`SpeechResponse`]
+pub fn prepare_speech_response(
+  murr: StreamDeserializer<StrRead, Value>,
+) -> Result<Vec<SpeechResponse>, WitError> {
+  let mut owo: Vec<SpeechResponse> = Vec::new();
+
+  for u in murr {
+    let v: Value = u.unwrap();
+
+    match v.as_object().unwrap().get("error") {
+      None => {}
+      Some(_) => {
+        return Err(from_value(v).unwrap());
+      }
+    }
+    match v.as_object().unwrap().get("is_final") {
+      None => {
+        owo.push(SpeechResponse::Half(from_value(v).unwrap()));
+      }
+      Some(_) => {
+        owo.push(SpeechResponse::Full(from_value(v).unwrap()));
+      }
+    }
+  }
+
+  Ok(owo)
+}
+
 #[cfg(test)]
 mod tests {
   use crate::prelude::*;
@@ -315,46 +347,29 @@ mod tests {
 
   #[test]
   #[cfg(feature = "blocking")]
-  fn blocking_api_message() {
+  fn blocking_api_speech() {
     dotenv::dotenv().ok();
     let owo = Client::new(&dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip")));
-
-    let uwu = owo
-      .blocking_message("OwO what's this", DynamicEntities::default())
-      .unwrap();
+    let options = SpeechRequest {
+      content_type: AudioContentType::Mp3,
+      context: None,
+      tag: None,
+      n: 0,
+      entities: Default::default(),
+    };
+    let audio = include_bytes!("../../owo/test.mp3");
+    let rawr = owo.blocking_speech(audio.to_vec(), options).unwrap();
+    let uwu = match rawr.last().unwrap() {
+      SpeechResponse::Full(d) => d,
+      SpeechResponse::Half(_) => unreachable!("Last should be final."),
+    };
     assert_eq!(uwu.intent().unwrap().name, "uwu");
-    assert_eq!(
-      uwu.entities.get("owo:owo").unwrap().get(0).unwrap().value,
-      Some("what's this".to_string())
+    assert!(
+      (uwu.entities.get("owo:owo").unwrap().get(0).unwrap().value
+        == Some("what's this".to_string()))
+        | (uwu.entities.get("owo:owo").unwrap().get(0).unwrap().value
+          == Some("watch this".to_string()))
     );
     assert_eq!(uwu.get_trait("sexy").unwrap().get(0).unwrap().value, "very");
   }
-}
-
-/// Converts the JSON chunks to a [`Vec`] of [`SpeechResponse`]
-pub fn prepare_speech_response(
-  murr: StreamDeserializer<StrRead, Value>,
-) -> Result<Vec<SpeechResponse>, WitError> {
-  let mut owo: Vec<SpeechResponse> = Vec::new();
-
-  for u in murr {
-    let v: Value = u.unwrap();
-
-    match v.as_object().unwrap().get("error") {
-      None => {}
-      Some(_) => {
-        return Err(from_value(v).unwrap());
-      }
-    }
-    match v.as_object().unwrap().get("is_final") {
-      None => {
-        owo.push(SpeechResponse::Half(from_value(v).unwrap()));
-      }
-      Some(_) => {
-        owo.push(SpeechResponse::Full(from_value(v).unwrap()));
-      }
-    }
-  }
-
-  Ok(owo)
 }

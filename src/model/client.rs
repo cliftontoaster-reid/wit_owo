@@ -2,7 +2,7 @@
 /// The blocking version of the API
 pub mod blocking;
 
-use crate::constants::MAX_MESSAGE_LENGTH;
+use crate::constants::check_message;
 use crate::model::speech::{SpeechRequest, SpeechResponse};
 use crate::prelude::prepare_speech_response;
 use reqwest::{Client as RequestClient, RequestBuilder};
@@ -34,7 +34,7 @@ impl Client {
   }
 
   /// It's just an easier and less painful way to check if there were any errors.
-  fn extract<'de, T: Deserialize<'de>>(v: Value, s: &'de str) -> Result<T, WitError> {
+  pub(crate) fn extract<'de, T: Deserialize<'de>>(v: Value, s: &'de str) -> Result<T, WitError> {
     match v.as_object().unwrap().get("error") {
       Some(_) => Err(from_str(s).unwrap()),
       None => Ok(from_str::<T>(s).unwrap()),
@@ -45,14 +45,14 @@ impl Client {
 #[cfg(feature = "async")]
 impl Client {
   /// It prepares a get request with bearer auth.  
-  fn prepare_get_request(&self, uri: &str) -> RequestBuilder {
+  pub fn prepare_get_request(&self, uri: &str) -> RequestBuilder {
     RequestClient::new()
       .get(uri)
       .bearer_auth(self.token.clone())
   }
 
   /// It prepares a post request with bearer auth.  
-  fn prepare_post_request(&self, uri: &str) -> RequestBuilder {
+  pub fn prepare_post_request(&self, uri: &str) -> RequestBuilder {
     RequestClient::new()
       .post(uri)
       .bearer_auth(self.token.clone())
@@ -259,17 +259,7 @@ impl Client {
     text: &str,
     dyn_entities: DynamicEntities,
   ) -> Result<Message, WitError> {
-    if text.len() > MAX_MESSAGE_LENGTH {
-      return Err(WitError {
-        error: format!(
-          "The message with a length of {} is greater than the max limit {}",
-          text.len(),
-          MAX_MESSAGE_LENGTH
-        )
-        .to_string(),
-        code: "INTERNAL_MESSAGE_LEN_OVER_LIMIT".to_string(),
-      });
-    }
+    check_message(text)?;
 
     let mut hihi = Vec::new();
     let omg = serde_json::to_string(&dyn_entities).unwrap();
