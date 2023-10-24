@@ -1,5 +1,5 @@
 #![doc = include_str!("../README.md")]
-#![warn(missing_docs)]
+#![forbid(missing_docs)]
 
 /// Easy to update variables used for avoiding useless requests.
 pub mod constants;
