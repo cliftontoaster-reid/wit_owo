@@ -1,3 +1,4 @@
+use crate::model::speech::SpeechInfo;
 use crate::prelude::*;
 use serde::Deserialize;
 use serde_json::de::StrRead;
@@ -176,6 +177,7 @@ pub fn prepare_dictation_response(
 #[cfg(test)]
 mod tests {
   use crate::model::dictation::DictationResponse;
+  use crate::model::speech::AudioContentType;
   use crate::prelude::*;
   use crate::utils::levenshtein_distance;
   use dotenv;

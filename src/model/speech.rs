@@ -435,6 +435,7 @@ impl Client {
 
 #[cfg(test)]
 mod tests {
+  use crate::model::speech::AudioContentType;
   use crate::prelude::*;
   use crate::utils::levenshtein_distance;
   use dotenv;

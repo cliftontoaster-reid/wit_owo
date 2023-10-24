@@ -1,3 +1,4 @@
+use crate::model::speech::prepare_speech_response;
 use crate::prelude::*;
 use serde_json::de::StrRead;
 use serde_json::{Deserializer, StreamDeserializer, Value};

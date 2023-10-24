@@ -1,3 +1,7 @@
+#[cfg(feature = "blocking")]
+/// The blocking version of the voices APIs.
+pub mod blocking;
+
 use crate::prelude::*;
 use serde::Deserialize;
 use serde_json::Value;

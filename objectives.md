@@ -28,10 +28,10 @@ Because that way we can more easily remember what we still have to do, and you c
     - [ ] structs
     - [ ] blocking API
     - [ ] asynchronous API
-  - [ ] voices
-    - [ ] structs
-    - [ ] blocking API
-    - [ ] asynchronous API
+  - [x] voices
+    - [x] structs
+    - [x] blocking API
+    - [x] asynchronous API
   - [ ] languages
     - [ ] structs
     - [ ] blocking API
