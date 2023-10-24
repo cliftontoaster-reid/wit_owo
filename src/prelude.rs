@@ -4,5 +4,6 @@ pub use crate::model::message::{Entity, Intent, Message};
 pub use crate::model::speech::{
   AudioContentType, FullSpeechResponse, HalfSpeechResponse, SpeechRequest, SpeechResponse,
 };
+pub use crate::model::synthesize::SynthesizeRequest;
 pub use crate::model::voices::*;
 pub use crate::model::{DynamicEntities, DynamicEntity, WitError};

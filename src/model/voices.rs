@@ -11,6 +11,13 @@ use std::collections::HashMap;
 /// A list of voices.
 pub struct VoicesList(HashMap<String, Vec<Voice>>);
 
+impl VoicesList {
+  /// Get a list of voices by locale, easier, and more concisely.
+  pub fn get(&self, key: &str) -> Option<&Vec<Voice>> {
+    self.0.get(key)
+  }
+}
+
 #[derive(Deserialize, PartialEq, Debug)]
 /// An available voice.
 pub struct Voice {

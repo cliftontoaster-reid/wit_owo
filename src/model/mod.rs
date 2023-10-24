@@ -12,6 +12,8 @@ pub mod language;
 pub mod message;
 /// The speech API structs.
 pub mod speech;
+/// The synthesize API structs.
+pub mod synthesize;
 /// The possible built values responses.
 pub mod values;
 /// The voices APIs structs.
