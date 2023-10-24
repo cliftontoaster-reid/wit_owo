@@ -45,7 +45,7 @@ impl Client {
   /// #
   /// # use std::env;
   /// # dotenv::dotenv().ok();
-  /// # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));  ///
+  /// # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
   /// let owo_client = Client::new(&token);
   /// # let res = owo_client.get_blocking_voice_info("Rebecca").unwrap();
   ///

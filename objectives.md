@@ -32,10 +32,10 @@ Because that way we can more easily remember what we still have to do, and you c
     - [x] structs
     - [x] blocking API
     - [x] asynchronous API
-  - [ ] languages
-    - [ ] structs
-    - [ ] blocking API
-    - [ ] asynchronous API
+  - [x] languages
+    - [x] structs
+    - [x] blocking API
+    - [x] asynchronous API
   - [ ] server management
     - [ ] intents
       - [ ] structs

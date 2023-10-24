@@ -6,6 +6,8 @@ use std::collections::HashMap;
 pub mod client;
 /// The dictation API structs.
 pub mod dictation;
+/// The language API structs.
+pub mod language;
 /// The message API structs.
 pub mod message;
 /// The speech API structs.
