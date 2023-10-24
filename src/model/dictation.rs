@@ -1,4 +1,4 @@
-use crate::prelude::{Client, HalfSpeechResponse, SpeechInfo, SpeechRequest, WitError};
+use crate::prelude::*;
 use serde::Deserialize;
 use serde_json::de::StrRead;
 use serde_json::{from_value, Deserializer, StreamDeserializer, Value};
@@ -29,7 +29,7 @@ pub struct FullDictationResponse {
   /// To know if it's the final response.
   pub is_final: bool,
 }
-
+#[cfg(feature = "async")]
 impl Client {
   /// It takes the audio to transcribe.
   ///
@@ -159,13 +159,7 @@ pub fn prepare_dictation_response(
 
   for u in murr {
     let v: Value = u.unwrap();
-
-    match v.as_object().unwrap().get("error") {
-      None => {}
-      Some(_) => {
-        return Err(from_value(v).unwrap());
-      }
-    }
+    Client::extract::<Value>(&v)?;
     match v.as_object().unwrap().get("is_final") {
       None => {
         owo.push(DictationResponse::Half(from_value(v).unwrap()));

@@ -4,7 +4,7 @@ use serde_json::{from_str, Value};
 
 impl Client {
   /// It takes the text to analyse and dynamic entities if you need some.
-  /// If not use the default method.
+  /// If not use the Default method.
   ///
   /// To use it you will first need to create a client
   /// ```
@@ -29,7 +29,7 @@ impl Client {
   ///   # assert_eq!(response.get_trait("sexy").unwrap().get(0).unwrap().value, "very");
   /// }
   /// ```
-  /// Then we prepare the options, with the default Dynamic Entities because we don't need it.
+  /// Then we prepare the options, with the Default Dynamic Entities because we don't need it.
   /// For more informations please visit [`DynamicEntities`].
   /// ```
   /// use wit_owo::prelude::*;
@@ -101,6 +101,6 @@ impl Client {
     let owo = uwu.text().unwrap();
     println!("{}", &owo);
     let v: Value = from_str(&owo).unwrap();
-    Self::extract(v, &owo)
+    Self::extract(&v)
   }
 }

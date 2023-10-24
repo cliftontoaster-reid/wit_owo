@@ -2,17 +2,15 @@
 /// The blocking version of the API
 pub mod blocking;
 
-use crate::constants::check_message;
-use crate::model::speech::{SpeechRequest, SpeechResponse};
-use crate::prelude::prepare_speech_response;
 use reqwest::{Client as RequestClient, RequestBuilder};
-use serde::Deserialize;
-use serde_json::{from_str, Deserializer, Value};
+use serde::de::DeserializeOwned;
+use serde_json::{from_value, Value};
 
-use super::{message::Message, DynamicEntities, WitError};
+use super::WitError;
 
 /// Wit OwO client, the interface that will power your doom creations (hopefully).
 pub struct Client {
+  /// The wit.ai's token.
   token: String,
 }
 
@@ -34,10 +32,12 @@ impl Client {
   }
 
   /// It's just an easier and less painful way to check if there were any errors.
-  pub(crate) fn extract<'de, T: Deserialize<'de>>(v: Value, s: &'de str) -> Result<T, WitError> {
+  pub fn extract<T: DeserializeOwned>(v: &Value) -> Result<T, WitError> {
+    #[cfg(test)]
+    println!("{:?}", v);
     match v.as_object().unwrap().get("error") {
-      Some(_) => Err(from_str(s).unwrap()),
-      None => Ok(from_str::<T>(s).unwrap()),
+      Some(_) => Err(from_value(v.clone()).unwrap()),
+      None => Ok(from_value::<T>(v.clone()).unwrap()),
     }
   }
 }
@@ -56,230 +56,6 @@ impl Client {
     RequestClient::new()
       .post(uri)
       .bearer_auth(self.token.clone())
-  }
-
-  /// It takes the audio to transcribe then analyse and dynamic entities if you need some.
-  /// If not use the default method.
-  ///
-  /// To use it you will first need to create a client
-  /// ```
-  /// use wit_owo::prelude::*;
-  /// # use std::env;
-  ///
-  /// #[tokio::main]
-  /// async fn main() {
-  ///   # dotenv::dotenv().ok();
-  ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
-  ///   let owo_client = Client::new(&token);
-  ///   #
-  ///   # let options = SpeechRequest {
-  ///   #   content_type: AudioContentType::Mp3,
-  ///   #   context: None,
-  ///   #   tag: None,
-  ///   #   n: 0,
-  ///   #   entities: Default::default(),
-  ///   # };
-  ///   # let audio = include_bytes!("../../owo/test.mp3");
-  ///   #
-  ///   # let response = owo_client.speech(audio.to_vec(), options).await.unwrap();
-  /// }
-  /// ```
-  /// Then we initialize the options with the file format,
-  /// and since we do not need dynamic entities in this example we will use the default values.
-  /// We will also import the audio from a file in the repertory.
-  /// ```
-  /// use wit_owo::prelude::*;
-  /// # use std::env;
-  ///
-  /// #[tokio::main]
-  /// async fn main() {
-  ///   # dotenv::dotenv().ok();
-  ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
-  ///   # let owo_client = Client::new(&token);
-  ///   #
-  ///   let options = SpeechRequest {
-  ///     content_type: AudioContentType::Mp3,
-  ///     context: None,
-  ///     tag: None,
-  ///     n: 0,
-  ///     entities: Default::default(),
-  ///   };
-  ///   let audio = include_bytes!("../../owo/test.mp3");
-  ///   #
-  ///   # let response = owo_client.speech(audio.to_vec(), options).await.unwrap();
-  /// }
-  /// ```
-  /// We can then send the request and wait from results.
-  /// ```
-  /// use wit_owo::prelude::*;
-  /// # use std::env;
-  ///
-  /// #[tokio::main]
-  /// async fn main() {
-  ///   # dotenv::dotenv().ok();
-  ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
-  ///   # let owo_client = Client::new(&token);
-  ///   #
-  ///   # let options = SpeechRequest {
-  ///   #   content_type: AudioContentType::Mp3,
-  ///   #   context: None,
-  ///   #   tag: None,
-  ///   #   n: 0,
-  ///   #   entities: Default::default(),
-  ///   # };
-  ///   # let audio = include_bytes!("../../owo/test.mp3");
-  ///   #
-  ///   let response = owo_client.speech(audio.to_vec(), options).await.unwrap();
-  /// }
-  /// ```
-  /// And finally we extract the final response.
-  /// ```
-  /// use wit_owo::prelude::*;
-  /// # use std::env;
-  ///
-  /// #[tokio::main]
-  /// async fn main() {
-  ///   # dotenv::dotenv().ok();
-  ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
-  ///   # let owo_client = Client::new(&token);
-  ///   #
-  ///   # let options = SpeechRequest {
-  ///   #   content_type: AudioContentType::Mp3,
-  ///   #   context: None,
-  ///   #   tag: None,
-  ///   #   n: 0,
-  ///   #   entities: Default::default(),
-  ///   # };
-  ///   # let audio = include_bytes!("../../owo/test.mp3");
-  ///   #
-  ///   # let response = owo_client.speech(audio.to_vec(), options).await.unwrap();
-  ///   let owo = response.last().unwrap();
-  /// }
-  /// ```
-  pub async fn speech(
-    &self,
-    audio: Vec<u8>,
-    options: SpeechRequest,
-  ) -> Result<Vec<SpeechResponse>, WitError> {
-    let uwu = self
-      .prepare_post_request("https://api.wit.ai/speech")
-      .header("content-type", options.content_type.to_str())
-      .body(audio)
-      .send()
-      .await
-      .unwrap()
-      .text()
-      .await
-      .unwrap();
-
-    let murr = Deserializer::from_str(&uwu).into_iter::<Value>();
-
-    prepare_speech_response(murr)
-  }
-
-  /// It takes the text to analyse and dynamic entities if you need some.
-  /// If not use the default method.
-  ///
-  /// To use it you will first need to create a client
-  /// ```
-  /// use wit_owo::prelude::*;
-  /// # use std::env;
-  ///
-  /// #[tokio::main]
-  /// async fn main() {
-  ///   # dotenv::dotenv().ok();
-  ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
-  ///   let owo_client = Client::new(&token);
-  ///   #
-  ///   # let entities = DynamicEntities::default();
-  ///   # let text = "OwO what's this";
-  ///   #
-  ///   # let response = owo_client.message(text, entities).await.unwrap();
-  ///   #
-  ///   # assert_eq!(response.intent().unwrap().name, "uwu");
-  ///   # assert_eq!(
-  ///   #   response.entities.get("owo:owo").unwrap().get(0).unwrap().value,
-  ///   #   Some("what's this".to_string())
-  ///   # );
-  ///   # assert_eq!(response.get_trait("sexy").unwrap().get(0).unwrap().value, "very");
-  /// }
-  /// ```
-  /// Then we prepare the options, with the default Dynamic Entities because we don't need it.
-  /// For more informations please visit [`DynamicEntities`].
-  /// ```
-  /// use wit_owo::prelude::*;
-  /// # use std::env;
-  ///
-  /// #[tokio::main]
-  /// async fn main() {
-  ///   # dotenv::dotenv().ok();
-  ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
-  ///   # let owo_client = Client::new(&token);
-  ///   #
-  ///   let entities = DynamicEntities::default();
-  ///   let text = "OwO what's this";
-  ///   #
-  ///   # let response = owo_client.message(text, entities).await.unwrap();
-  ///   #
-  ///   # assert_eq!(response.intent().unwrap().name, "uwu");
-  ///   # assert_eq!(
-  ///   #   response.entities.get("owo:owo").unwrap().get(0).unwrap().value,
-  ///   #   Some("what's this".to_string())
-  ///   # );
-  ///   # assert_eq!(response.get_trait("sexy").unwrap().get(0).unwrap().value, "very");
-  /// }
-  /// ```
-  /// Then we send the request and it's done.
-  /// ```
-  /// use wit_owo::prelude::*;
-  /// # use std::env;
-  ///
-  /// #[tokio::main]
-  /// async fn main() {
-  ///   # dotenv::dotenv().ok();
-  ///   # let token: String = dotenv::var("WIT_AI").unwrap_or(env::var("WIT_AI").expect("For testing a .env must have WIT_AI set, a backup archive is located here https://github.com/cliftontoaster-reid/wit_owo/blob/master/owo/wit_ai.zip"));
-  ///   # let owo_client = Client::new(&token);
-  ///   #
-  ///   # let entities = DynamicEntities::default();
-  ///   # let text = "OwO what's this";
-  ///   #
-  ///   let response = owo_client.message(text, entities).await.unwrap();
-  ///   #
-  ///   # assert_eq!(response.intent().unwrap().name, "uwu");
-  ///   # assert_eq!(
-  ///   #   response.entities.get("owo:owo").unwrap().get(0).unwrap().value,
-  ///   #   Some("what's this".to_string())
-  ///   # );
-  ///   # assert_eq!(response.get_trait("sexy").unwrap().get(0).unwrap().value, "very");
-  /// }
-  /// ```
-  /// Voila, bravo!
-  pub async fn message(
-    &self,
-    text: &str,
-    dyn_entities: DynamicEntities,
-  ) -> Result<Message, WitError> {
-    check_message(text)?;
-
-    let mut hihi = Vec::new();
-    let omg = serde_json::to_string(&dyn_entities).unwrap();
-
-    hihi.push(("q", text));
-    if !dyn_entities.entities.is_empty() {
-      hihi.push(("entities", &omg));
-    }
-
-    let uwu = self
-      .prepare_get_request("https://api.wit.ai/message")
-      .query(&hihi)
-      .send()
-      .await
-      .unwrap();
-
-    let owo = uwu.text().await.unwrap();
-    println!("{}", &owo);
-    let v: Value = from_str(&owo).unwrap();
-    Self::extract(v, &owo)
   }
 }
 

@@ -8,10 +8,12 @@ pub mod client;
 pub mod dictation;
 /// The message API structs.
 pub mod message;
-/// The speech APi structs.
+/// The speech API structs.
 pub mod speech;
 /// The possible built values responses.
 pub mod values;
+/// The voices APIs structs.
+pub mod voices;
 
 #[derive(Debug, Deserialize)]
 /// An error.
@@ -130,7 +132,7 @@ pub struct Context {
   ///
   /// If neither reference_time nor timezone are provided
   /// (or a fortiori if no context at all is provided),
-  /// we will use the default timezone of your app,
+  /// we will use the Default timezone of your app,
   /// which you can set in 'Settings' in the web console.
   ///
   /// Example: `America/Los_Angeles`
@@ -146,7 +148,7 @@ pub struct Context {
   ///
   /// If you have locale-specific needs for dates and times, please contribute directly to [Duckling](https://github.com/facebook/duckling).
   ///
-  /// If a locale is not yet available in Duckling, it will default to the "parent"
+  /// If a locale is not yet available in Duckling, it will Default to the "parent"
   /// language, with no locale-specific customization.
   ///
   /// Example: `en_GB`.

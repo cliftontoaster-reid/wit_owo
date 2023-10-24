@@ -7,7 +7,7 @@ Because that way we can more easily remember what we still have to do, and you c
     - [x] structs
     - [x] blocking API
     - [x] asynchronous API
-  - [ ] speech
+  - [x] speech
     - [x] structs
     - [x] blocking API
     - [x] asynchronous API
@@ -20,10 +20,10 @@ Because that way we can more easily remember what we still have to do, and you c
       - [ ] structs
       - [ ] blocking API
       - [ ] asynchronous API
-  - [ ] dictation
-    - [ ] structs
-    - [ ] blocking API
-    - [ ] asynchronous API
+  - [x] dictation
+    - [x] structs
+    - [x] blocking API
+    - [x] asynchronous API
   - [ ] synthesize
     - [ ] structs
     - [ ] blocking API

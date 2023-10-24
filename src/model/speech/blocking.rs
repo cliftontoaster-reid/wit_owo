@@ -4,7 +4,7 @@ use serde_json::{Deserializer, StreamDeserializer, Value};
 
 impl Client {
   /// It takes the audio to transcribe then analyse and dynamic entities if you need some.
-  /// If not use the default method.
+  /// If not use the Default method.
   ///
   /// To use it you will first need to create a client
   /// ```
@@ -29,7 +29,7 @@ impl Client {
   /// }
   /// ```
   /// Then we initialize the options with the file format,
-  /// and since we do not need dynamic entities in this example we will use the default values.
+  /// and since we do not need dynamic entities in this example we will use the Default values.
   /// We will also import the audio from a file in the repertory.
   /// ```
   /// use wit_owo::prelude::*;
