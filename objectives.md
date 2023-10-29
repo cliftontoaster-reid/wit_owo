@@ -38,9 +38,9 @@ Because that way we can more easily remember what we still have to do, and you c
     - [x] asynchronous API
   - [ ] server management
     - [ ] intents
-      - [ ] structs
+      - [x] structs
       - [ ] blocking API
-      - [ ] asynchronous API
+      - [x] asynchronous API
     - [ ] entities
       - [ ] structs
       - [ ] blocking API

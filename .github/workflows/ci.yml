@@ -5,6 +5,7 @@ on: [push]
 env:
   CARGO_TERM_COLOR: always
   WIT_AI: ${{ secrets.WIT_AI }}
+  WIT_AI_SERVER: ${{ secrets.WIT_AI_SERVER }}
 
 jobs:
   build:

@@ -10,6 +10,11 @@ pub mod dictation;
 pub mod language;
 /// The message API structs.
 pub mod message;
+/// Server-side management APIs.
+///
+/// Those APIs require that a server-side token to be used
+#[cfg(feature = "server")]
+pub mod server;
 /// The speech API structs.
 pub mod speech;
 /// The synthesize API structs.

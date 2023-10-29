@@ -60,7 +60,7 @@ impl Client {
 }
 
 #[cfg(test)]
-#[cfg(feature = "tokio")]
+#[cfg(feature = "async")]
 mod tests {
   use super::*;
   use std::env;

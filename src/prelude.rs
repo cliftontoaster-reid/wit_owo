@@ -7,3 +7,5 @@ pub use crate::model::speech::{
 pub use crate::model::synthesize::SynthesizeRequest;
 pub use crate::model::voices::*;
 pub use crate::model::{DynamicEntities, DynamicEntity, WitError};
+#[cfg(feature = "server")]
+pub use crate::model::server::prelude::*;
