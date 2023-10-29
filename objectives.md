@@ -38,13 +38,13 @@ Because that way we can more easily remember what we still have to do, and you c
     - [x] asynchronous API
   - [ ] server management
     - [ ] intents
-      - [x] structs
-      - [ ] blocking API
-      - [x] asynchronous API
-    - [ ] entities
       - [ ] structs
       - [ ] blocking API
       - [ ] asynchronous API
+    - [ ] entities
+      - [x] structs
+      - [x] blocking API
+      - [x] asynchronous API
     - [ ] traits
       - [ ] structs
       - [ ] blocking API
