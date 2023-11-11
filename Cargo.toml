@@ -1,6 +1,6 @@
 [package]
 name = "wit_owo"
-version = "0.1.7"
+version = "0.1.8"
 edition = "2021"
 license = "MIT OR Apache-2.0"
 description = "Finally, an adequate library for wit.ai in Rust."
@@ -20,12 +20,23 @@ tokio = { version = "1.33.0", features = ["full"], optional = true }
 serde = { version = "1.0.189", features = ["derive"] }
 chrono = { version = "0.4.31", features = ["serde"] }
 bytes = { version = "1.5.0", features = ["serde"] }
+lingua = { version = "1.5.0", features = [], optional = true }
 
 [features]
-default = ["async"]
-blocking = ["reqwest/blocking"]
-async = ["dep:tokio"]
-server = []
+default = [
+  "async"
+]
+blocking = [
+  "reqwest/blocking"
+]
+async = [
+  "dep:tokio"
+]
+server = [
+]
+lingua = [
+  "dep:lingua"
+]
 
 [dev-dependencies]
 dotenv = "0.15.0"
