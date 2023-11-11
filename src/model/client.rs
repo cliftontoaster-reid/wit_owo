@@ -1,10 +1,12 @@
 #[cfg(feature = "blocking")]
 /// The blocking version of the API
 pub mod blocking;
-
+#[cfg(feature = "lingua")]
+use lingua::{Language, LanguageDetector, LanguageDetectorBuilder};
 use reqwest::{Client as RequestClient, RequestBuilder};
 use serde::de::DeserializeOwned;
 use serde_json::{from_value, Value};
+use std::collections::HashMap;
 
 use super::WitError;
 
@@ -59,10 +61,70 @@ impl Client {
   }
 }
 
+#[cfg(feature = "lingua")]
+/// A multi lingual client to handle multiple languages without working much.
+pub struct MultiLingualClient {
+  clients: HashMap<Language, Client>,
+  lingua: LanguageDetector,
+}
+
+impl MultiLingualClient {
+  /// Initializes a wit.ai multilingual client.
+  ///
+  /// Takes a HashMap with for each language to support,
+  /// its token for a wit.ai application and returns the Wit OwO [`MultiLingualClient`].
+  ///
+  /// ```
+  /// use std::collections::HashMap;
+  /// use wit_owo::prelude::*;
+  /// use lingua::Language;
+  /// use lingua::Language::{English, French};
+  /// # let token_fr = "owo fancy";
+  /// # let token_en = "owo fancy";
+  ///
+  /// let mut owo: HashMap<Language, String> = HashMap::new();
+  /// owo.insert(French, token_fr.to_owned());
+  /// owo.insert(English, token_en.to_owned());
+  ///
+  /// let rawr = MultiLingualClient::new(&owo);
+  /// ```
+  pub fn new(tokens: &HashMap<Language, String>) -> Self {
+    if tokens.is_empty() {
+      panic!("Tokens are required.");
+    }
+    let languages: Vec<Language> = tokens.keys().clone().copied().collect();
+
+    let mut uwu = Self {
+      clients: Default::default(),
+      lingua: LanguageDetectorBuilder::from_languages(&languages).build(),
+    };
+
+    for (k, i) in tokens {
+      uwu.clients.insert(*k, Client::new(i));
+    }
+
+    uwu
+  }
+
+  /// Returns the client for the given language.
+  pub fn get(&self, language: &Language) -> Option<&Client> {
+    self.clients.get(language)
+  }
+
+  /// Guesses the language of the given text and returns the client associated with it if available.
+  pub fn guess_language(&self, text: &str) -> Option<&Client> {
+    match self.lingua.detect_language_of(text) {
+      None => None,
+      Some(uwu) => self.clients.get(&uwu),
+    }
+  }
+}
+
 #[cfg(test)]
 #[cfg(feature = "async")]
 mod tests {
   use super::*;
+  use crate::model::DynamicEntities;
   use std::env;
 
   #[tokio::test]
