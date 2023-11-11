@@ -68,6 +68,7 @@ pub struct MultiLingualClient {
   lingua: LanguageDetector,
 }
 
+#[cfg(feature = "lingua")]
 impl MultiLingualClient {
   /// Initializes a wit.ai multilingual client.
   ///
