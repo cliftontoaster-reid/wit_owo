@@ -16,7 +16,7 @@ exclude = ["owo"]
 async-trait = "0.1.74"
 reqwest = { version = "0.11.22", features = ["async-compression", "gzip", "json", "rustls-tls", "serde_json", "trust-dns", "stream"] }
 serde_json = "1.0.107"
-tokio = { version = "1.33.0", features = ["full"], optional = true }
+tokio = { version = "1.35.1", features = ["full"], optional = true }
 serde = { version = "1.0.189", features = ["derive"] }
 chrono = { version = "0.4.31", features = ["serde"] }
 bytes = { version = "1.5.0", features = ["serde"] }
