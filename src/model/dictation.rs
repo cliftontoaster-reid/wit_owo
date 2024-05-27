@@ -136,7 +136,7 @@ impl Client {
     options: SpeechRequest,
   ) -> Result<Vec<DictationResponse>, WitError> {
     let uwu = self
-      .prepare_post_request("https://api.wit.ai/speech")
+      .prepare_post_request("https://api.wit.ai/dictation")
       .header("content-type", options.content_type.to_str())
       .body(audio)
       .send()
