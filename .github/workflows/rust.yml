@@ -21,7 +21,7 @@ jobs:
         with:
           toolchain: nightly
           override: true
-          override-components: clippy
+          components: clippy
 
       - name: Install dependencies
         run: cargo build --verbose
@@ -46,7 +46,7 @@ jobs:
         with:
           toolchain: nightly
           override: true
-          override-components: rustfmt, clippy
+          components: rustfmt, clippy
 
       - name: Install dependencies
         run: cargo install cargo-msrv
