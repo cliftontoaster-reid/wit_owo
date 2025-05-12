@@ -48,19 +48,36 @@ jobs:
           override: true
           components: rustfmt, clippy
 
-      - name: Install dependencies
+      - name: Cache cargo-msrv binary
+        uses: actions/cache@v3
+        id: msrv-cache
+        with:
+          path: ~/.cargo/bin/cargo-msrv
+          key: ${{ runner.os }}-cargo-msrv
+
+      - name: Install cargo-msrv (if not cached)
+        if: steps.msrv-cache.outputs.cache-hit != 'true'
         run: cargo install cargo-msrv
 
       - name: Find and set MSRV
         run: |
           set -o pipefail
           # run find, grab the version after “MSRV:”
-          MSRV=$(cargo msrv find --include-all-patch-releases 2>&1 | awk '/MSRV:/ {print $2}')
+          MSRV=$(cargo msrv find --include-all-patch-releases 2>&1 \
+                | awk '/MSRV:/ {print $2}' \
+                | sed -E 's/\x1B\[[0-9;]*[mK]//g')
           echo "🕵️ Detected MSRV: $MSRV"
           # now set it
           cargo msrv set "$MSRV"
-      - name: Format code
-        run: cargo fmt --all -- --check
+      - name: Install Trunk CLI
+        run: |
+          curl -LO https://trunk.io/releases/trunk
+          chmod +x trunk
+          mkdir -p "$HOME/.cargo/bin"
+          mv trunk "$HOME/.cargo/bin"
+
+      - name: Format code with Trunk
+        run: trunk fmt
 
       - name: Commit and push MSRV update
         run: |
