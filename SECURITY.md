@@ -4,7 +4,7 @@
 
 If you discover a security vulnerability in this package, please:
 
-1. Open a private issue using our [Security issue template](https://github.com/cliftontoaster-reid/wit_owo/issues/new/choose)  
+1. Open a private issue using our [Security issue template](https://github.com/cliftontoaster-reid/wit_owo/issues/new/choose)
 2. Or send a signed and encrypted report to <security@cliftontoaster-reid.dev> (PGP key: available in our repo)
 
 We will acknowledge your report within 48 hours and work to deliver a fix as quickly as possible.
@@ -17,7 +17,7 @@ We follow a responsible disclosure model. We will not publicly disclose any vuln
 
 We maintain the following release range:
 
-- **Current stable release** (latest major version)  
+- **Current stable release** (latest major version)
 - **Two preceding major versions**
 
 ### Backport Strategy

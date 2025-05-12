@@ -5,7 +5,7 @@ on:
   pull_request:
     branches: [main]
 permissions:
-  contents: write   # allow commits+pushing
+  contents: write # allow commits+pushing
 jobs:
   build:
     strategy:
@@ -38,8 +38,8 @@ jobs:
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true  # so git push is allowed
-          fetch-depth: 0            # full history for safe rebasing, etc.
+          persist-credentials: true # so git push is allowed
+          fetch-depth: 0 # full history for safe rebasing, etc.
 
       - name: Set up Rust
         uses: actions-rs/toolchain@v1

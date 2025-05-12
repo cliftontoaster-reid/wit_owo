@@ -1,7 +1,7 @@
 {
-    "ltex.additionalRules.languageModel": "",
-    "ltex.language": "en-GB",
-    "files.associations": {
-        "LICENCE*": "plaintext"
-    }
+  "ltex.additionalRules.languageModel": "",
+  "ltex.language": "en-GB",
+  "files.associations": {
+    "LICENCE*": "plaintext"
+  }
 }
