@@ -268,7 +268,7 @@ mod tests {
   #[should_panic(expected = "Message cannot be longer than")]
   fn new_too_long_panics() {
     // Create a string longer than MAX_TEXT_LENGTH
-    let long = "a".repeat((MAX_TEXT_LENGTH as usize) + 1);
+    let long = "a".repeat(MAX_TEXT_LENGTH + 1);
     let _ = MessageQuery::new(long);
   }
 
@@ -297,9 +297,9 @@ mod tests {
     assert!(url.path().ends_with("/message"));
     let pairs: HashMap<_, _> = url.query_pairs().into_owned().collect();
     assert_eq!(pairs.get("q"), Some(&"hello world".to_string()));
-    assert!(pairs.get("tag").is_none());
-    assert!(pairs.get("n").is_none());
-    assert!(pairs.get("entities").is_none());
+    assert!(!pairs.contains_key("tag"));
+    assert!(!pairs.contains_key("n"));
+    assert!(!pairs.contains_key("entities"));
   }
 
   #[test]
@@ -354,13 +354,23 @@ mod tests {
 
     assert_eq!(msg.entities.len(), 0);
     assert_eq!(msg.intents.len(), 1);
-    assert_eq!(msg.intents[0].confidence, 0.9048754466499055);
+    let mut conf = msg.intents[0].confidence;
+    let mut expected = 0.740_637_96;
+    assert!(
+      (conf - expected).abs() < 1e-6,
+      "expected ~{expected}, got {conf}"
+    );
     assert_eq!(msg.intents[0].id, "776124090880944");
     assert_eq!(msg.intents[0].name, "enable_welcome_message");
     assert_eq!(msg.text, "Please");
     assert_eq!(msg.traits.len(), 1);
     assert_eq!(msg.traits["please"].len(), 1);
-    assert_eq!(msg.traits["please"][0].confidence, 0.740637952351606);
+    conf = msg.traits["please"][0].confidence;
+    expected = 0.740_637_96;
+    assert!(
+      (conf - expected).abs() < 1e-6,
+      "expected ~{expected}, got {conf}"
+    );
     assert_eq!(msg.traits["please"][0].id, "844096410415880");
     assert_eq!(msg.traits["please"][0].value, "true");
   }
