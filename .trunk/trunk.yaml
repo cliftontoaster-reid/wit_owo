@@ -20,7 +20,7 @@ lint:
     - clippy@nightly
     - rustfmt@nightly
     - actionlint@1.7.7
-    - checkov@3.2.416
+    - checkov@3.2.420
     - git-diff-check
     - markdownlint@0.44.0
     - osv-scanner@2.0.2
