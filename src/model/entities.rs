@@ -45,16 +45,28 @@ pub struct Entity {
   pub type_: String,
 }
 
+/// A serializable representation of a dynamic entity value.
+///
+/// Each `EntityValue` holds a primary `keyword` and
+/// a list of `synonyms` used for matching and normalization.
 #[derive(Serialize, Debug, Clone)]
 pub struct EntityValue {
+  /// The canonical keyword for this entity value.
   pub keyword: String,
+  /// Alternative forms or synonyms for the keyword.
   pub synonyms: Vec<String>,
 }
 
+/// A dynamic entity grouping multiple `EntityValue` items under a name.
+///
+/// `DynamicEntity` is useful for slot‐filling or enum‐style entity sets
+/// that can be built or modified at runtime.
 #[derive(Serialize, Debug, Clone)]
 pub struct DynamicEntity {
+  /// The runtime name of this entity set (skipped during Serde operations).
   #[serde(skip)]
   pub name: String,
+  /// The collection of values available for this dynamic entity.
   pub values: Vec<EntityValue>,
 }
 

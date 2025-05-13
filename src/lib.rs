@@ -1,4 +1,5 @@
 #![doc = include_str!("../README.md")]
+#![warn(missing_docs)]
 
 /// Wit.ai Rust SDK
 pub mod api;
