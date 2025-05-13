@@ -29,6 +29,23 @@ pub struct MessageQuery {
 }
 
 impl MessageQuery {
+  /// Creates a new `MessageQuery` with the given message text.
+  ///
+  /// # Arguments
+  ///
+  /// * `message` - The message text to be processed.
+  ///
+  /// # Panics
+  ///
+  /// Panics if the message is empty or longer than `MAX_TEXT_LENGTH` characters.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// # use wit_owo::model::message::MessageQuery;
+  /// let query = MessageQuery::new("Hello world".to_string());
+  /// # assert_eq!(query.q, "Hello world");
+  /// ```
   pub fn new(message: String) -> Self {
     if message.is_empty() {
       panic!("Message cannot be empty");
@@ -44,11 +61,41 @@ impl MessageQuery {
     }
   }
 
+  /// Sets the tag for the `MessageQuery`.
+  ///
+  /// # Arguments
+  ///
+  /// * `tag` - The tag to be associated with the message.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// # use wit_owo::model::message::MessageQuery;
+  /// let query = MessageQuery::new("Hello".to_string()).with_tag("greeting".to_string());
+  /// # assert_eq!(query.tag, Some("greeting".to_string()));
+  /// ```
   pub fn with_tag(mut self, tag: String) -> Self {
     self.tag = Some(tag);
     self
   }
 
+  /// Sets the limit on the number of intents to return for the `MessageQuery`.
+  ///
+  /// # Arguments
+  ///
+  /// * `limit` - The maximum number of intents to return. Must be between 1 and 8.
+  ///
+  /// # Panics
+  ///
+  /// Panics if the limit is greater than 8.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// # use wit_owo::model::message::MessageQuery;
+  /// let query = MessageQuery::new("What is the weather?".to_string()).with_limit(3);
+  /// # assert_eq!(query.n, Some(3));
+  /// ```
   pub fn with_limit(mut self, limit: u8) -> Self {
     if limit > 8 {
       panic!("Cannot request more than 8 intents from Wit.ai");
@@ -57,11 +104,56 @@ impl MessageQuery {
     self
   }
 
+  /// Sets the dynamic entities for the `MessageQuery`.
+  ///
+  /// # Arguments
+  ///
+  /// * `dynamic_entities` - A vector of `DynamicEntity` objects.
+  ///
+  /// # Examples
+  ///
+  /// ```
+  /// # use wit_owo::model::message::MessageQuery;
+  /// # use wit_owo::model::entities::DynamicEntity;
+  /// let value = wit_owo::model::entities::EntityValue {
+  ///   keyword: "purple".to_string(),
+  ///   synonyms: vec!["violet".to_string(), "magenta".to_string()],
+  /// };
+  ///
+  /// let mut entities = vec![
+  ///   DynamicEntity::new("color".to_string()),
+  /// ];
+  /// entities[0].add_value(value);
+  /// let query = MessageQuery::new("My favorite color is purple".to_string()).with_dynamic_entities(entities);
+  /// # assert!(query.dynamic_entities.is_some());
+  /// # let owo = query.dynamic_entities.unwrap();
+  /// # assert_eq!(owo.len(), 1);
+  /// # assert_eq!(owo[0].name, "color");
+  /// # assert_eq!(owo[0].values[0].keyword, "purple");
+  /// # assert_eq!(owo[0].values[0].synonyms, vec!["violet", "magenta"]);
+  /// ```
   pub fn with_dynamic_entities(mut self, dynamic_entities: Vec<DynamicEntity>) -> Self {
     self.dynamic_entities = Some(dynamic_entities);
     self
   }
 
+  /// Converts the `MessageQuery` into a `Url` for the Wit.ai API.
+  ///
+  /// This method constructs the URL with the query parameters based on the fields of the `MessageQuery`.
+  ///
+  /// # Returns
+  ///
+  /// * `Ok(Url)` containing the constructed URL on success.
+  /// * `Err(ApiError)` if there is an error during URL parsing or JSON serialization of dynamic entities.
+  ///
+  /// # Examples
+  ///
+  /// ```compile_fail
+  /// # use wit_owo::model::message::MessageQuery;
+  /// let query = MessageQuery::new("Test query".to_string());
+  /// let url = query.to_url().unwrap();
+  /// # assert!(url.to_string().contains("q=Test%20query"));
+  /// ```
   pub(crate) fn to_url(&self) -> Result<Url, ApiError> {
     let mut params: Vec<(String, String)> = Vec::new();
     params.push(("q".to_string(), self.q.clone()));
