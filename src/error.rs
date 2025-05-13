@@ -23,4 +23,6 @@ pub enum ApiError {
   UrlError(#[from] url::ParseError),
   #[error("Request error: {0}")]
   RequestError(#[from] reqwest::Error),
+  #[error("Serialization error: {0}")]
+  SerializationError(#[from] serde_json::Error),
 }

@@ -6,7 +6,11 @@ use url::Url;
 
 use crate::constants::BASE_URL;
 
-use super::{entities::Entity, intents::Intent};
+use super::{
+  entities::{DynamicEntity, Entity},
+  intents::Intent,
+  traits::Trait,
+};
 
 /// A query to the Wit.ai API for message processing.
 ///
@@ -20,6 +24,8 @@ pub struct MessageQuery {
   pub tag: Option<String>,
   /// Optional limit on the number of intents to return.
   pub n: Option<u8>,
+  /// The dynamic entity array to be used in the request.
+  pub dynamic_entities: Option<Vec<DynamicEntity>>,
 }
 
 impl MessageQuery {
@@ -34,6 +40,7 @@ impl MessageQuery {
       q: message,
       tag: None,
       n: None,
+      dynamic_entities: None,
     }
   }
 
@@ -50,6 +57,11 @@ impl MessageQuery {
     self
   }
 
+  pub fn with_dynamic_entities(mut self, dynamic_entities: Vec<DynamicEntity>) -> Self {
+    self.dynamic_entities = Some(dynamic_entities);
+    self
+  }
+
   pub(crate) fn to_url(&self) -> Result<Url, ApiError> {
     let mut params: Vec<(String, String)> = Vec::new();
     params.push(("q".to_string(), self.q.clone()));
@@ -58,6 +70,43 @@ impl MessageQuery {
     }
     if let Some(n) = self.n {
       params.push(("n".to_string(), n.to_string()));
+    }
+    // The dynamic entities should be remade into the following format:
+    // HashMap<String, HashMap<String, {keyword: String, synonyms: Vec<String>}>>
+    //
+    // An example of the expected format:
+    // ```json
+    // {
+    //   "entities": {
+    //     "color": [
+    //       {
+    //         "keyword": "purple",
+    //         "synonyms": ["violet", "magenta"]
+    //       },
+    //       {
+    //         "keyword": "blue",
+    //         "synonyms": ["aqua blue", "marine blue"]
+    //       }
+    //     ]
+    //   }
+    // }
+    // ```
+    //
+    // It should then be serialized into a JSON string, made url safe, and added to the params as `entities`.
+    if let Some(dynamic_entities) = &self.dynamic_entities {
+      let mut entities: HashMap<String, serde_json::Value> = HashMap::new();
+      for entity in dynamic_entities {
+        let name = entity.name.clone();
+        let data: serde_json::Value = serde_json::to_value(entity)?;
+
+        entities.insert(name, data);
+      }
+      // We now are able to turn this into a JSON string
+      // and make it url safe
+      let json_raw = serde_json::to_string(&entities)?;
+      let json_safe = urlencoding::encode(&json_raw);
+
+      params.push(("entities".to_string(), json_safe.to_string()));
     }
 
     Url::parse_with_params(&format!("{BASE_URL}message"), params).map_err(|e| e.into())
@@ -106,5 +155,121 @@ pub struct Message {
   /// The intents identified in the message.
   pub intents: Vec<Intent>,
   /// The traits associated with the message.
-  pub traits: HashMap<String, Vec<String>>,
+  /// Each key is a trait name and the value is a list of trait entries.
+  #[serde(default)]
+  pub traits: HashMap<String, Vec<Trait>>,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+  use serde_json;
+  use std::collections::HashMap;
+
+  #[test]
+  #[should_panic(expected = "Message cannot be empty")]
+  fn new_empty_panics() {
+    let _ = MessageQuery::new("".to_string());
+  }
+
+  #[test]
+  #[should_panic(expected = "Message cannot be longer than")]
+  fn new_too_long_panics() {
+    // Create a string longer than MAX_TEXT_LENGTH
+    let long = "a".repeat((MAX_TEXT_LENGTH as usize) + 1);
+    let _ = MessageQuery::new(long);
+  }
+
+  #[test]
+  fn with_tag_sets_tag() {
+    let mq = MessageQuery::new("test".into()).with_tag("tagged".into());
+    assert_eq!(mq.tag.as_deref(), Some("tagged"));
+  }
+
+  #[test]
+  #[should_panic(expected = "Cannot request more than 8 intents")]
+  fn with_limit_panics_when_exceeds() {
+    let _ = MessageQuery::new("hi".into()).with_limit(9);
+  }
+
+  #[test]
+  fn with_limit_sets_n() {
+    let mq = MessageQuery::new("test".into()).with_limit(5);
+    assert_eq!(mq.n, Some(5));
+  }
+
+  #[test]
+  fn to_url_only_query() {
+    let mq = MessageQuery::new("hello world".into());
+    let url = mq.to_url().unwrap();
+    assert!(url.path().ends_with("/message"));
+    let pairs: HashMap<_, _> = url.query_pairs().into_owned().collect();
+    assert_eq!(pairs.get("q"), Some(&"hello world".to_string()));
+    assert!(pairs.get("tag").is_none());
+    assert!(pairs.get("n").is_none());
+    assert!(pairs.get("entities").is_none());
+  }
+
+  #[test]
+  fn to_url_with_tag_and_limit() {
+    let mq = MessageQuery::new("hello".into())
+      .with_tag("greeting".into())
+      .with_limit(2);
+    let url = mq.to_url().unwrap();
+    let pairs: HashMap<_, _> = url.query_pairs().into_owned().collect();
+    assert_eq!(pairs.get("q"), Some(&"hello".to_string()));
+    assert_eq!(pairs.get("tag"), Some(&"greeting".to_string()));
+    assert_eq!(pairs.get("n"), Some(&"2".to_string()));
+  }
+
+  #[test]
+  fn from_string_and_str() {
+    let mq1: MessageQuery = "foo".into();
+    let mq2 = MessageQuery::new("foo".into());
+    assert_eq!(mq1.q, mq2.q);
+
+    let s = "bar".to_string();
+    let mq3: MessageQuery = s.clone().into();
+    assert_eq!(mq3.q, "bar");
+  }
+
+  #[test]
+  fn deserialize_message() {
+    let json = r#"
+{
+  "entities": {},
+  "intents": [
+    {
+      "confidence": 0.9048754466499055,
+      "id": "776124090880944",
+      "name": "enable_welcome_message"
+    }
+  ],
+  "text": "Please",
+  "traits": {
+    "please": [
+      {
+        "confidence": 0.740637952351606,
+        "id": "844096410415880",
+        "value": "true"
+      }
+    ]
+  }
+}
+
+    "#;
+    let msg: Message = serde_json::from_str(json).unwrap();
+
+    assert_eq!(msg.entities.len(), 0);
+    assert_eq!(msg.intents.len(), 1);
+    assert_eq!(msg.intents[0].confidence, 0.9048754466499055);
+    assert_eq!(msg.intents[0].id, "776124090880944");
+    assert_eq!(msg.intents[0].name, "enable_welcome_message");
+    assert_eq!(msg.text, "Please");
+    assert_eq!(msg.traits.len(), 1);
+    assert_eq!(msg.traits["please"].len(), 1);
+    assert_eq!(msg.traits["please"][0].confidence, 0.740637952351606);
+    assert_eq!(msg.traits["please"][0].id, "844096410415880");
+    assert_eq!(msg.traits["please"][0].value, "true");
+  }
 }

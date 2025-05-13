@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 /// A recognized entity extracted from text.
@@ -43,4 +43,33 @@ pub struct Entity {
   /// The type of the entity, renamed from `type` in JSON.
   #[serde(rename = "type")]
   pub type_: String,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct EntityValue {
+  pub keyword: String,
+  pub synonyms: Vec<String>,
+}
+
+#[derive(Serialize, Debug, Clone)]
+pub struct DynamicEntity {
+  #[serde(skip)]
+  pub name: String,
+  pub values: Vec<EntityValue>,
+}
+
+impl DynamicEntity {
+  /// Creates a new `DynamicEntity` with the given name and values.
+  pub fn new(name: String) -> Self {
+    DynamicEntity {
+      name,
+      values: Vec::new(),
+    }
+  }
+
+  /// Adds a new value to the `DynamicEntity`.
+  pub fn add_value(&mut self, value: EntityValue) -> &mut Self {
+    self.values.push(value);
+    self
+  }
 }
