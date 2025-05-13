@@ -139,7 +139,7 @@ wit_api = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 use wit_owo::prelude::*;
 #[tokio::main]
 async fn main() -> Result<(), ApiError> {
-  let token = std::env::var("WIT_TOKEN").expect("WIT_TOKEN not set");
+  let token = std::env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not set");
   let client = WitClient::new(&token);
 
   let message = "Hello world";
@@ -156,7 +156,7 @@ async fn main() -> Result<(), ApiError> {
    like `WitClient` and `ApiError` into scope.
 2. We define an asynchronous `main` function using the `#[tokio::main]` macro.
    This macro sets up the Tokio runtime so we can `await` futures.
-3. We read the `WIT_TOKEN` environment variable. This is your personal API
+3. We read the `WIT_API_TOKEN` environment variable. This is your personal API
    token, required to authenticate with the Wit.ai service.
 4. We create a new `WitClient` instance by calling `WitClient::new(&token)`.
    The client holds configuration and credentials needed for requests.
