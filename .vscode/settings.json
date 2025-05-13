@@ -3,5 +3,6 @@
   "ltex.language": "en-GB",
   "files.associations": {
     "LICENCE*": "plaintext"
-  }
+  },
+  "editor.tabSize": 2
 }
