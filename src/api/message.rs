@@ -136,8 +136,6 @@ mod tests {
   #[test]
   #[cfg(feature = "blocking")]
   fn test_get_message_blocking() {
-    use crate::model::message::MessageQuery;
-
     let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
     let client = WitClient::new(&token);
 
