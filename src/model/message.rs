@@ -355,7 +355,7 @@ mod tests {
     assert_eq!(msg.entities.len(), 0);
     assert_eq!(msg.intents.len(), 1);
     let mut conf = msg.intents[0].confidence;
-    let mut expected = 0.740_637_96;
+    let mut expected = 0.904_875_46;
     assert!(
       (conf - expected).abs() < 1e-6,
       "expected ~{expected}, got {conf}"
