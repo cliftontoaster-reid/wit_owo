@@ -136,9 +136,12 @@ wit_api = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 ## Example
 
 ```rust
+use dotenv::dotenv;
 use wit_owo::prelude::*;
+
 #[tokio::main]
 async fn main() -> Result<(), ApiError> {
+  dotenv().ok();
   let token = std::env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not set");
   let client = WitClient::new(&token);
 

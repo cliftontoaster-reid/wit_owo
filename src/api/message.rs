@@ -96,6 +96,7 @@ impl WitClient {
 #[cfg(test)]
 mod tests {
   use crate::model::client::WitClient;
+  use dotenv::dotenv;
   use lipsum::lipsum;
   use std::env;
 
@@ -104,6 +105,7 @@ mod tests {
   #[tokio::test]
   #[cfg(feature = "tokio")]
   async fn test_get_message() {
+    dotenv().ok();
     let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
     let client = WitClient::new(&token);
 
@@ -119,6 +121,7 @@ mod tests {
   #[tokio::test]
   #[cfg(feature = "tokio")]
   async fn test_get_message_complex() {
+    dotenv().ok();
     use crate::model::message::MessageQuery;
 
     let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
@@ -136,6 +139,7 @@ mod tests {
   #[test]
   #[cfg(feature = "blocking")]
   fn test_get_message_blocking() {
+    dotenv().ok();
     let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
     let client = WitClient::new(&token);
 
@@ -151,6 +155,7 @@ mod tests {
   #[test]
   #[cfg(feature = "blocking")]
   fn test_get_message_complex_blocking() {
+    dotenv().ok();
     use crate::model::message::MessageQuery;
 
     let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");

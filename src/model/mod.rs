@@ -13,3 +13,6 @@ pub mod intents;
 pub mod message;
 /// This module contains the structures related to the traits returned by the Wit.ai API.
 pub mod traits;
+
+/// This module contains the structures related to the contexts returned by the Wit.ai API.
+pub mod context;
