@@ -3,6 +3,21 @@ name = "wit_owo"
 version = "1.0.1"
 edition = "2024"
 rust-version = "1.85.0"
+authors = ["Clifton Toaster Reid <clifton.toaster.reid@proton.me>"]
+categories = ["api-bindings", "text-processing"]
+description = "A Rust library for interacting with the Wit.ai API."
+documentation = "https://docs.rs/wit_owo/latest/wit_owo/"
+repository = "https://github.com/cliftontoaster-reid/wit_owo"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+keywords = [
+  "wit.ai",
+  "wit",
+  "api",
+  "rust",
+  "natural language processing",
+  "nlp",
+]
 
 [dependencies]
 chrono = { version = "0.4.41", features = ["serde"] }
