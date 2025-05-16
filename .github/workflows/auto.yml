@@ -10,33 +10,8 @@ permissions:
   contents: write # allow commits+pushing
   pull-requests: write # allow PRs
 jobs:
-  formatting:
+  auto-update:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true # so git push is allowed
-          fetch-depth: 0 # full history for safe rebasing, etc.
-
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1.0.7
-        with:
-          toolchain: nightly
-          override: true
-          components: rustfmt
-          profile: minimal
-
-      - name: Format code with rustfmt
-        run: |
-          cargo fmt --all -- --check
-          # If files have been changed, make a new commit
-          git diff --cached --quiet || git commit -m "chore: format code with rustfmt"
-
-  update:
-    runs-on: ubuntu-latest
-    needs: formatting
     env:
       BRANCH: update-msrv-${{ github.run_id }}
     steps:
@@ -101,6 +76,7 @@ jobs:
           chmod +x trunk
           mkdir -p "$HOME/.cargo/bin"
           mv trunk "$HOME/.cargo/bin"
+          trunk install
 
       - name: Format code with Trunk
         run: trunk fmt
