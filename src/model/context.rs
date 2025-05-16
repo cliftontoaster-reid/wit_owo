@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 /// Geographical coordinates of the user.
 /// Used to improve ranking for wit/location’s resolved values.
 /// Example: `{ "lat": 37.47104, "long": -122.14703 }`
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Coordinates {
   /// Latitude in decimal degrees.
   pub lat: f64,
