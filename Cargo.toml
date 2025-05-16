@@ -1,6 +1,6 @@
 [package]
 name = "wit_owo"
-version = "1.0.1"
+version = "1.0.2"
 edition = "2024"
 rust-version = "1.85.0"
 authors = ["Clifton Toaster Reid <clifton.toaster.reid@proton.me>"]
@@ -11,6 +11,11 @@ repository = "https://github.com/cliftontoaster-reid/wit_owo"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["wit-ai", "api", "nlp", "nlu"]
+
+[package.metadata.docs.rs]
+all-features = true
+default-target = "x86_64-unknown-linux-gnu"
+targets = ["x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
 
 [dependencies]
 chrono = { version = "0.4.41", features = ["serde"] }
