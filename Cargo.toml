@@ -10,14 +10,7 @@ documentation = "https://docs.rs/wit_owo/latest/wit_owo/"
 repository = "https://github.com/cliftontoaster-reid/wit_owo"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
-keywords = [
-  "wit.ai",
-  "wit",
-  "api",
-  "rust",
-  "natural language processing",
-  "nlp",
-]
+keywords = ["wit.ai", "api", "rust", "natural language processing", "nlp"]
 
 [dependencies]
 chrono = { version = "0.4.41", features = ["serde"] }
