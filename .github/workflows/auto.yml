@@ -1,0 +1,122 @@
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Every Monday, Wednesday, and Friday at 00:00 UTC
+    - cron: 0 0 * * 1,3,5
+permissions:
+  contents: write # allow commits+pushing
+  pull-requests: write # allow PRs
+jobs:
+  formatting:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true # so git push is allowed
+          fetch-depth: 0 # full history for safe rebasing, etc.
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: nightly
+          override: true
+          components: rustfmt
+          profile: minimal
+
+      - name: Format code with rustfmt
+        run: |
+          cargo fmt --all -- --check
+          # If files have been changed, make a new commit
+          git diff --cached --quiet || git commit -m "chore: format code with rustfmt"
+
+  update:
+    runs-on: ubuntu-latest
+    needs: formatting
+    env:
+      BRANCH: update-msrv-${{ github.run_id }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true # so git push is allowed
+          fetch-depth: 0 # full history for safe rebasing, etc.
+
+      - name: Set up Rust
+        uses: actions-rs/toolchain@v1.0.7
+        with:
+          toolchain: nightly
+          override: true
+          components: clippy
+
+      - name: Cache cargo target directory
+        uses: actions/cache@v4
+        with:
+          path: target
+          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run cargo update and clippy
+        run: |
+          cargo update --verbose
+          cargo clippy --all-targets --all-features -- -D warnings
+          # IF the update breaks the build, we should use git reset to
+          # revert the changes to Cargo.lock and exit with an error
+          # to prevent the PR from being created.
+          if [ $? -ne 0 ]; then
+            echo "Update broke the build, reverting changes to Cargo.lock"
+            git reset --hard HEAD
+            exit 1
+          fi
+          git diff --cached --quiet || git commit -m "chore: update dependencies"
+
+      - name: Cache cargo-msrv binary
+        uses: actions/cache@v4
+        id: msrv-cache
+        with:
+          path: ~/.cargo/bin/cargo-msrv
+          key: ${{ runner.os }}-cargo-msrv
+
+      - name: Install cargo-msrv (if not cached)
+        if: steps.msrv-cache.outputs.cache-hit != 'true'
+        run: cargo install cargo-msrv
+
+      - name: Find and set MSRV
+        run: |
+          set -o pipefail
+          # run find, grab the version after “MSRV:”
+          MSRV=$(cargo msrv find --include-all-patch-releases 2>&1 \
+                | awk '/MSRV:/ {print $2}' \
+                | sed -E 's/\x1B\[[0-9;]*[mK]//g')
+          echo "🕵️ Detected MSRV: $MSRV"
+          # now set it
+          cargo msrv set "$MSRV"
+      - name: Install Trunk CLI
+        run: |
+          curl -LO https://trunk.io/releases/trunk
+          chmod +x trunk
+          mkdir -p "$HOME/.cargo/bin"
+          mv trunk "$HOME/.cargo/bin"
+
+      - name: Format code with Trunk
+        run: trunk fmt
+
+      - name: Commit MSRV update
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git diff --cached --quiet || git commit -m "chore: update MSRV to $MSRV"
+          git push --set-upstream origin $BRANCH || true
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ env.BRANCH }}
+          base: main
+          body: This pull request updates the MSRV detected by cargo-msrv.
