@@ -93,10 +93,17 @@ jobs:
       - name: Format code with Trunk
         run: trunk fmt
 
-      - name: Commit and push MSRV update
+      - name: Commit and create pull request for MSRV update
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add .
           git diff --cached --quiet || git commit -m "chore: update MSRV to $MSRV"
-          git push
+          git push --set-upstream origin update-msrv || true
+
+          # Install GitHub CLI
+          curl -sL https://github.com/cli/cli/releases/download/v2.0.0/gh_2.0.0_linux_amd64.tar.gz | tar xz
+          sudo mv gh_2.0.0_linux_amd64/bin/gh /usr/local/bin/
+
+          # Create pull request
+          gh pr create --title "chore: update MSRV to $MSRV" --body "This pull request updates the MSRV detected by cargo-msrv." --base main --head update-msrv --repo cliftontoaster-reid/wit_owo
