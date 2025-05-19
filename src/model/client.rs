@@ -45,7 +45,7 @@ impl WitClient {
   /// let response = request.send().await.unwrap();
   /// # }
   /// ```
-  #[cfg(feature = "tokio")]
+  #[cfg(feature = "async")]
   pub(crate) fn prepare_get_request(&self, uri: Url) -> reqwest::RequestBuilder {
     let client = reqwest::Client::new();
     client

@@ -33,7 +33,7 @@ impl WitClient {
   /// # Ok(())
   /// # }
   /// ```
-  #[cfg(feature = "tokio")]
+  #[cfg(feature = "async")]
   pub async fn get_message<T: Into<MessageQuery>>(&self, message: T) -> Result<Message, ApiError> {
     let query: MessageQuery = message.into();
     let request = self.prepare_get_request(query.into());
@@ -103,7 +103,7 @@ mod tests {
   pub const LIPSUM_LENGTH: usize = 24;
 
   #[tokio::test]
-  #[cfg(feature = "tokio")]
+  #[cfg(feature = "async")]
   async fn test_get_message() {
     dotenv().ok();
     let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
@@ -119,7 +119,7 @@ mod tests {
   }
 
   #[tokio::test]
-  #[cfg(feature = "tokio")]
+  #[cfg(feature = "async")]
   async fn test_get_message_complex() {
     dotenv().ok();
     use crate::model::message::MessageQuery;
