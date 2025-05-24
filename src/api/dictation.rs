@@ -178,7 +178,7 @@ mod tests {
   use super::*;
   use crate::model::dictation::{AudioSource, Encoding};
   use bytes::Bytes;
-  use dotenv::dotenv;
+  use dotenvy::dotenv;
   use std::env;
 
   #[cfg(feature = "async")]

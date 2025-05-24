@@ -96,7 +96,7 @@ impl WitClient {
 #[cfg(test)]
 mod tests {
   use crate::model::client::WitClient;
-  use dotenv::dotenv;
+  use dotenvy::dotenv;
   use lipsum::lipsum;
   use std::env;
 

@@ -42,5 +42,5 @@ async = ["dep:tokio", "dep:async-stream", "dep:futures"]
 blocking = ["reqwest/blocking"]
 
 [dev-dependencies]
-dotenv = "0.15.0"
+dotenvy = "0.15.0"
 lipsum = "0.9.1"
