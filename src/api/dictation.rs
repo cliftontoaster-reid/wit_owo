@@ -2,6 +2,7 @@ use crate::error::ApiError;
 use crate::model::dictation::{Dictation, DictationQuery};
 use crate::prelude::BASE_URL;
 use crate::prelude::WitClient;
+use crate::utils::json::extract_complete_json;
 use futures::stream::{Stream, StreamExt};
 use url::Url;
 
@@ -32,19 +33,41 @@ impl WitClient {
   /// # Example
   ///
   /// ```no_run
-  /// use wit_owo::{WitClient, DictationQuery, Encoding, AudioSource};
+  /// use wit_owo::prelude::*;
   /// use bytes::Bytes;
   /// use futures::stream::StreamExt;
+  /// use std::fs::File;
+  /// use std::io::Read;
   ///
   /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+  /// // Initialize the Wit.ai client with your token
   /// let client = WitClient::new("your_token_here");
-  /// let audio_data = Bytes::from(vec![/* audio bytes */]);
-  /// let params = DictationQuery::new(Encoding::Wav, AudioSource::Buffered(audio_data));
   ///
-  /// let mut stream = client.post_dictation(params).await?;
+  /// // Load audio data from a file (WAV format in this example)
+  /// let mut file = File::open("path/to/audio.wav")?;
+  /// let mut audio_bytes = Vec::new();
+  /// file.read_to_end(&mut audio_bytes)?;
+  /// let audio_data = Bytes::from(audio_bytes);
+  ///
+  /// // Create a dictation query with the appropriate encoding
+  /// let params = DictationQuery::new(
+  ///     Encoding::Wav,
+  ///     AudioSource::Buffered(audio_data)
+  /// );
+  ///
+  /// // Send the audio data to Wit.ai and process the streaming response
+  /// let mut stream = Box::pin(client.post_dictation(params).await);
+  ///
+  /// // Iterate through the stream of transcription results
   /// while let Some(result) = stream.next().await {
-  ///     let dictation = result?;
-  ///     println!("Transcription: {}", dictation.text);
+  ///     match result {
+  ///         Ok(dictation) => {
+  ///             println!("Speech type: {:?}", dictation.speech_type);
+  ///             println!("Transcription: {}", dictation.text);
+  ///             println!("Confidence: {}", dictation.speech.confidence);
+  ///         },
+  ///         Err(e) => eprintln!("Error: {}", e)
+  ///     }
   /// }
   /// # Ok(())
   /// # }
@@ -54,9 +77,8 @@ impl WitClient {
     &self,
     params: DictationQuery,
   ) -> impl Stream<Item = Result<Dictation, ApiError>> {
-    use async_stream::try_stream;
-
     use crate::error::WitError;
+    use async_stream::try_stream;
 
     try_stream! {
       let content_type = params.to_string();
@@ -106,6 +128,49 @@ impl WitClient {
 
     }
   }
+
+  #[cfg(feature = "blocking")]
+  pub fn post_blocking_dictation(
+    &self,
+    params: DictationQuery,
+  ) -> Result<Vec<Dictation>, ApiError> {
+    use crate::error::WitError;
+
+    let content_type = params.to_string();
+    let url = Url::parse(&format!("{BASE_URL}dictation"))?;
+
+    let request = self
+      .prepare_post_blocking(url)
+      .header("Content-Type", content_type)
+      .body(params.data);
+
+    println!("Request {request:?}");
+
+    let response = request.send()?;
+
+    if !response.status().is_success() {
+      return Err(serde_json::from_str::<WitError>(&response.text()?)?.into());
+    }
+
+    let response_text = response.text()?;
+    let mut buffer = response_text;
+    let mut results = Vec::new();
+
+    // Process complete JSON objects from the buffer
+    while let Some((json_str, remaining)) = extract_complete_json(&buffer) {
+      // We print the JSON for debugging purposes
+      println!("Received complete JSON: {json_str:?}");
+
+      // Deserialize the complete JSON object
+      let dictation: Dictation = serde_json::from_str(&json_str)?;
+      results.push(dictation);
+
+      // Update buffer with remaining data
+      buffer = remaining;
+    }
+
+    Ok(results)
+  }
 }
 
 #[cfg(test)]
@@ -116,6 +181,7 @@ mod tests {
   use dotenv::dotenv;
   use std::env;
 
+  #[cfg(feature = "async")]
   #[tokio::test]
   async fn test_post_dictation() {
     dotenv().ok();
@@ -154,117 +220,35 @@ mod tests {
     );
   }
 
+  #[cfg(feature = "blocking")]
   #[test]
-  fn test_extract_complete_json() {
-    // Test with a complete JSON object
-    let buffer = r#"{"text": "hello"}"#;
-    let result = extract_complete_json(buffer);
-    assert!(result.is_some());
-    let (json, remaining) = result.unwrap();
-    assert_eq!(json, r#"{"text": "hello"}"#);
-    assert_eq!(remaining, "");
+  fn test_post_blocking_dictation() {
+    dotenv().ok();
+    let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+    let client = WitClient::new(&token);
 
-    // Test with partial JSON (incomplete)
-    let buffer = r#"{"text": "hel"#;
-    let result = extract_complete_json(buffer);
-    assert!(result.is_none());
+    let params = DictationQuery::new(
+      Encoding::Wav,
+      AudioSource::Buffered(Bytes::from(
+        include_bytes!("../../assets/test.wav").as_ref(),
+      )),
+    );
 
-    // Test with complete JSON followed by partial
-    let buffer = r#"{"text": "hello"}{"text": "wor"#;
-    let result = extract_complete_json(buffer);
-    assert!(result.is_some());
-    let (json, remaining) = result.unwrap();
-    assert_eq!(json, r#"{"text": "hello"}"#);
-    assert_eq!(remaining, r#"{"text": "wor"#);
+    let results = client
+      .post_blocking_dictation(params)
+      .expect("Failed to get dictation results");
 
-    // Test with multiple complete JSON objects
-    let buffer = r#"{"text": "hello"}{"text": "world"}"#;
-    let result = extract_complete_json(buffer);
-    assert!(result.is_some());
-    let (json, remaining) = result.unwrap();
-    assert_eq!(json, r#"{"text": "hello"}"#);
-    assert_eq!(remaining, r#"{"text": "world"}"#);
+    assert!(
+      !results.is_empty(),
+      "Should have received at least one dictation result"
+    );
 
-    // Test with nested braces in string (should still work for simple JSON)
-    let buffer = r#"{"text": "hello world"}"#;
-    let result = extract_complete_json(buffer);
-    assert!(result.is_some());
-    let (json, remaining) = result.unwrap();
-    assert_eq!(json, r#"{"text": "hello world"}"#);
-    assert_eq!(remaining, "");
-  }
-
-  #[test]
-  fn test_extract_complete_json_edge_cases() {
-    // Test with whitespace around JSON
-    let buffer = r#"  {"text": "hello"}  {"text": "world"}"#;
-    let result = extract_complete_json(buffer);
-    assert!(result.is_some());
-    let (json, remaining) = result.unwrap();
-    assert_eq!(json, r#"{"text": "hello"}"#);
-    assert_eq!(remaining, r#"  {"text": "world"}"#);
-
-    // Test with no JSON objects
-    let buffer = "some random text without braces";
-    let result = extract_complete_json(buffer);
-    assert!(result.is_none());
-
-    // Test with only opening brace
-    let buffer = "{";
-    let result = extract_complete_json(buffer);
-    assert!(result.is_none());
-
-    // Test with unmatched braces
-    let buffer = "{{";
-    let result = extract_complete_json(buffer);
-    assert!(result.is_none());
-
-    // Test empty buffer
-    let buffer = "";
-    let result = extract_complete_json(buffer);
-    assert!(result.is_none());
-  }
-}
-
-/// Extracts the first complete JSON object from a buffer and returns it along with the remaining data.
-///
-/// This function counts '{' and '}' characters to determine when a complete JSON object is found.
-/// When the brace count goes from >0 back to 0, we know we have a complete JSON object.
-///
-/// # Arguments
-///
-/// * `buffer` - The string buffer containing potentially partial JSON data
-///
-/// # Returns
-///
-/// Returns `Some((json_string, remaining_buffer))` if a complete JSON object is found,
-/// or `None` if no complete JSON object is available yet.
-fn extract_complete_json(buffer: &str) -> Option<(String, String)> {
-  let mut brace_count = 0;
-  let mut start_idx = None;
-
-  for (i, ch) in buffer.char_indices() {
-    match ch {
-      '{' => {
-        if brace_count == 0 {
-          start_idx = Some(i);
-        }
-        brace_count += 1;
-      }
-      '}' => {
-        brace_count -= 1;
-        if brace_count == 0 && start_idx.is_some() {
-          // We found a complete JSON object
-          let start = start_idx.unwrap();
-          let end = i + 1; // Include the closing brace
-          let json_str = buffer[start..end].to_string();
-          let remaining = buffer[end..].to_string();
-          return Some((json_str, remaining));
-        }
-      }
-      _ => {}
+    for dictation in results {
+      assert!(
+        !dictation.text.is_empty(),
+        "Dictation text should not be empty"
+      );
+      println!("Transcription: {}", dictation.text);
     }
   }
-
-  None
 }

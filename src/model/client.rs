@@ -58,6 +58,32 @@ impl WitClient {
       .header("Authorization", format!("Bearer {}", self.0))
   }
 
+  /// Prepares an asynchronous POST request with the `tokio` feature enabled.
+  ///
+  /// This function returns a `reqwest::RequestBuilder` that is already
+  /// configured with the Authorization header.
+  ///
+  /// # Arguments
+  ///
+  /// * `uri` - The full URL of the Wit.ai endpoint you want to call.
+  ///
+  /// # Panics
+  ///
+  /// Panics if the URI is not valid.
+  ///
+  /// # Example
+  ///
+  /// ```ignore
+  /// # use url::Url;
+  /// # use wit_owo::model::client::WitClient;
+  /// # async fn example() {
+  /// let client = WitClient::new("TOKEN");
+  /// let uri = Url::parse("https://api.wit.ai/entities").unwrap();
+  /// let request = client.prepare_post_request(uri);
+  /// let response = request.send().await.unwrap();
+  /// # }
+  /// ```
+  #[cfg(feature = "async")]
   pub(crate) fn prepare_post_request(&self, uri: Url) -> reqwest::RequestBuilder {
     // Add the version v parameter to the URL
     let mut uri = uri;
@@ -105,6 +131,44 @@ impl WitClient {
     let client = reqwest::blocking::Client::new();
     client
       .get(uri)
+      .header("Authorization", format!("Bearer {}", self.0))
+  }
+
+  /// Prepares a blocking POST request with the `blocking` feature enabled.
+  ///
+  /// This function returns a `reqwest::blocking::RequestBuilder` that is already
+  /// configured with the Authorization header.
+  ///
+  /// # Arguments
+  ///
+  /// * `uri` - The full URL of the Wit.ai endpoint you want to call.
+  ///
+  /// # Panics
+  ///
+  /// Panics if the URI is not valid.
+  ///
+  /// # Example
+  ///
+  /// ```ignore
+  /// # use url::Url;
+  /// # use wit_owo::model::client::WitClient;
+  /// let client = WitClient::new("TOKEN");
+  /// let uri = Url::parse("https://api.wit.ai/entities").unwrap();
+  /// let response = client
+  ///     .prepare_post_blocking(uri)
+  ///     .send()
+  ///     .unwrap();
+  /// ```
+  #[cfg(feature = "blocking")]
+  pub(crate) fn prepare_post_blocking(&self, uri: Url) -> reqwest::blocking::RequestBuilder {
+    // Add the version v parameter to the URL
+    let mut uri = uri;
+    uri
+      .query_pairs_mut()
+      .append_pair("v", crate::constants::CURRENT_VERSION);
+    let client = reqwest::blocking::Client::new();
+    client
+      .post(uri)
       .header("Authorization", format!("Bearer {}", self.0))
   }
 }

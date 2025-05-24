@@ -1,6 +1,9 @@
 use bytes::Bytes;
 use futures::stream::Stream;
+#[cfg(feature = "async")]
 use reqwest::Body;
+#[cfg(feature = "blocking")]
+use reqwest::blocking::Body as BlockingBody;
 use serde::Deserialize;
 use std::{fmt::Debug, pin::Pin};
 
@@ -124,11 +127,22 @@ impl Debug for AudioSource {
   }
 }
 
+#[cfg(feature = "async")]
 impl From<AudioSource> for Body {
   fn from(source: AudioSource) -> Body {
     match source {
       AudioSource::Buffered(bytes) => Body::from(bytes),
       AudioSource::Stream(stream) => Body::wrap_stream(stream),
+    }
+  }
+}
+
+#[cfg(feature = "blocking")]
+impl From<AudioSource> for BlockingBody {
+  fn from(source: AudioSource) -> BlockingBody {
+    match source {
+      AudioSource::Buffered(bytes) => BlockingBody::from(bytes),
+      AudioSource::Stream(_) => panic!("BlockingBody cannot be created from a stream"),
     }
   }
 }
