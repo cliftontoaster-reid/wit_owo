@@ -25,12 +25,12 @@ pub struct WitError {
   /// Machine-readable error code.
   pub code: String,
   /// Human-readable error message.
-  pub message: String,
+  pub error: String,
 }
 
 impl Display for WitError {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "Error code: {}, message: {}", self.code, self.message)
+    write!(f, "Error code: {}, message: {}", self.code, self.error)
   }
 }
 
