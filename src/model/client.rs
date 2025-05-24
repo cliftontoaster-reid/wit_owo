@@ -47,9 +47,26 @@ impl WitClient {
   /// ```
   #[cfg(feature = "async")]
   pub(crate) fn prepare_get_request(&self, uri: Url) -> reqwest::RequestBuilder {
+    // Add the version v parameter to the URL
+    let mut uri = uri;
+    uri
+      .query_pairs_mut()
+      .append_pair("v", crate::constants::CURRENT_VERSION);
     let client = reqwest::Client::new();
     client
       .get(uri)
+      .header("Authorization", format!("Bearer {}", self.0))
+  }
+
+  pub(crate) fn prepare_post_request(&self, uri: Url) -> reqwest::RequestBuilder {
+    // Add the version v parameter to the URL
+    let mut uri = uri;
+    uri
+      .query_pairs_mut()
+      .append_pair("v", crate::constants::CURRENT_VERSION);
+    let client = reqwest::Client::new();
+    client
+      .post(uri)
       .header("Authorization", format!("Bearer {}", self.0))
   }
 
@@ -80,6 +97,11 @@ impl WitClient {
   /// ```
   #[cfg(feature = "blocking")]
   pub(crate) fn prepare_get_blocking(&self, uri: Url) -> reqwest::blocking::RequestBuilder {
+    // Add the version v parameter to the URL
+    let mut uri = uri;
+    uri
+      .query_pairs_mut()
+      .append_pair("v", crate::constants::CURRENT_VERSION);
     let client = reqwest::blocking::Client::new();
     client
       .get(uri)

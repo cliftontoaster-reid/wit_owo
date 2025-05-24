@@ -16,3 +16,6 @@ pub mod traits;
 
 /// This module contains the structures related to the contexts returned by the Wit.ai API.
 pub mod context;
+
+/// This module contains the structures related to the dictation returned by the Wit.ai API.
+pub mod dictation;
