@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in this package, please send us an encrypted email at <security@cliftontoaster-reid.dev>. We recommend encryption but unencrypted is also fine—it’s mainly here if you want or feel it’s needed. If you really cannot send an email, please open a public issue using our [Bug issue template](https://github.com/cliftontoaster-reid/wit_owo/issues/new/choose). We know issues are public, but it’s better than nothing and we appreciate any report.
+If you discover a security vulnerability in this package, please send us an encrypted email at <clifton.toaster.reid@proton.me>. We recommend encryption but unencrypted is also fine—it’s mainly here if you want or feel it’s needed. If you really cannot send an email, please open a public issue using our [Bug issue template](https://github.com/cliftontoaster-reid/wit_owo/issues/new/choose). We know issues are public, but it’s better than nothing and we appreciate any report.
 
 We will do our best to respond within 48 hours, but you can expect a reply as soon as we are able. As long as we get the information, we are more than thankful for your time.
 
