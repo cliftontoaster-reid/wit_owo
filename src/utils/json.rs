@@ -25,13 +25,14 @@ pub(crate) fn extract_complete_json(buffer: &str) -> Option<(String, String)> {
       }
       '}' => {
         brace_count -= 1;
-        if brace_count == 0 && start_idx.is_some() {
-          // We found a complete JSON object
-          let start = start_idx.unwrap();
-          let end = i + 1; // Include the closing brace
-          let json_str = buffer[start..end].to_string();
-          let remaining = buffer[end..].to_string();
-          return Some((json_str, remaining));
+        if brace_count == 0 {
+          if let Some(start) = start_idx {
+            // We found a complete JSON object
+            let end = i + 1; // Include the closing brace
+            let json_str = buffer[start..end].to_string();
+            let remaining = buffer[end..].to_string();
+            return Some((json_str, remaining));
+          }
         }
       }
       _ => {}
