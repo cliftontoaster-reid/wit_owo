@@ -129,6 +129,66 @@ impl WitClient {
     }
   }
 
+  /// Performs blocking speech-to-text dictation using the Wit.ai API.
+  ///
+  /// This method sends audio data to the Wit.ai dictation endpoint and blocks until
+  /// all transcription results are received. Unlike the async version which returns
+  /// a stream, this method collects all results and returns them as a vector.
+  ///
+  /// # Arguments
+  ///
+  /// * `params` - A `DictationQuery` containing the audio encoding format and audio data
+  ///
+  /// # Returns
+  ///
+  /// Returns a `Result<Vec<Dictation>, ApiError>` containing all transcription results.
+  /// Each `Dictation` item contains a transcription result, which may be partial (interim)
+  /// or final depending on the response from the API.
+  ///
+  /// # Errors
+  ///
+  /// This method will return an error if:
+  /// * The URL parsing fails
+  /// * The HTTP request fails to send
+  /// * The API returns a non-success status code
+  /// * JSON deserialization of the response fails
+  ///
+  /// # Example
+  ///
+  /// ```no_run
+  /// use wit_owo::prelude::*;
+  /// use bytes::Bytes;
+  /// use std::fs::File;
+  /// use std::io::Read;
+  ///
+  /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+  /// // Initialize the Wit.ai client with your token
+  /// let client = WitClient::new("your_token_here");
+  ///
+  /// // Load audio data from a file (WAV format in this example)
+  /// let mut file = File::open("path/to/audio.wav")?;
+  /// let mut audio_bytes = Vec::new();
+  /// file.read_to_end(&mut audio_bytes)?;
+  /// let audio_data = Bytes::from(audio_bytes);
+  ///
+  /// // Create a dictation query with the appropriate encoding
+  /// let params = DictationQuery::new(
+  ///     Encoding::Wav,
+  ///     AudioSource::Buffered(audio_data)
+  /// );
+  ///
+  /// // Send the audio data to Wit.ai and get all transcription results
+  /// let results = client.post_blocking_dictation(params)?;
+  ///
+  /// // Process all transcription results
+  /// for dictation in results {
+  ///     println!("Speech type: {:?}", dictation.speech_type);
+  ///     println!("Transcription: {}", dictation.text);
+  ///     println!("Confidence: {}", dictation.speech.confidence);
+  /// }
+  /// # Ok(())
+  /// # }
+  /// ```
   #[cfg(feature = "blocking")]
   pub fn post_blocking_dictation(
     &self,
@@ -177,9 +237,12 @@ impl WitClient {
 mod tests {
   use super::*;
   use crate::model::dictation::{AudioSource, Encoding};
+  use crate::utils::tests::levenshtein_distance;
   use bytes::Bytes;
   use dotenvy::dotenv;
   use std::env;
+
+  const EXPECTED_TEXT: &str = "the examination and testimony of the experts enabled the commission to conclude that five shots may have been fired";
 
   #[cfg(feature = "async")]
   #[tokio::test]
@@ -197,6 +260,7 @@ mod tests {
 
     let mut stream = Box::pin(client.post_dictation(params).await);
     let mut received_results = false;
+    let mut last_dictation: Option<Dictation> = None;
 
     while let Some(result) = stream.next().await {
       match result {
@@ -207,9 +271,10 @@ mod tests {
           );
           println!("Transcription: {}", dictation.text);
           received_results = true;
+          last_dictation = Some(dictation);
         }
         Err(e) => {
-          panic!("Dictation failed with error: {:?}", e);
+          panic!("Dictation failed with error: {e:?}");
         }
       }
     }
@@ -218,6 +283,19 @@ mod tests {
       received_results,
       "Should have received at least one dictation result"
     );
+
+    if let Some(dictation) = last_dictation {
+      assert!(
+        !dictation.text.is_empty(),
+        "Last dictation text should not be empty"
+      );
+      assert!(
+        levenshtein_distance(dictation.text.to_ascii_lowercase().as_str(), EXPECTED_TEXT) < 5,
+        "Last dictation text is not similar enough to expected text"
+      );
+    } else {
+      panic!("No dictation results were received");
+    }
   }
 
   #[cfg(feature = "blocking")]
@@ -243,12 +321,22 @@ mod tests {
       "Should have received at least one dictation result"
     );
 
-    for dictation in results {
+    for dictation in &results {
       assert!(
         !dictation.text.is_empty(),
         "Dictation text should not be empty"
       );
       println!("Transcription: {}", dictation.text);
     }
+
+    let last_dictation = results.last().expect("No dictation results were received");
+    const EXPECTED_TEXT: &str = "the examination and testimony of the experts enabled the commission to conclude that five shots may have been fired";
+    assert!(
+      levenshtein_distance(
+        last_dictation.text.to_ascii_lowercase().as_str(),
+        EXPECTED_TEXT
+      ) < 5,
+      "Last dictation text is not similar enough to expected text"
+    );
   }
 }

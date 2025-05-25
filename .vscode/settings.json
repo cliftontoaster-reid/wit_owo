@@ -4,5 +4,6 @@
   "files.associations": {
     "LICENCE*": "plaintext"
   },
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "rust-analyzer.cargo.features": "all"
 }
