@@ -1,10 +1,8 @@
 use crate::error::ApiError;
 use crate::model::dictation::{Dictation, DictationQuery};
-use crate::prelude::BASE_URL;
 use crate::prelude::WitClient;
 use crate::utils::json::extract_complete_json;
 use futures::stream::{Stream, StreamExt};
-use url::Url;
 
 impl WitClient {
   /// Performs speech-to-text dictation using the Wit.ai API.
@@ -82,7 +80,7 @@ impl WitClient {
 
     try_stream! {
       let content_type = params.to_string();
-      let url = Url::parse(&format!("{BASE_URL}dictation"))?;
+      let url = params.to_url()?;
 
       let request = self
         .prepare_post_request(url)
@@ -197,7 +195,7 @@ impl WitClient {
     use crate::error::WitError;
 
     let content_type = params.to_string();
-    let url = Url::parse(&format!("{BASE_URL}dictation"))?;
+    let url = params.to_url()?;
 
     let request = self
       .prepare_post_blocking(url)
