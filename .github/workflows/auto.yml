@@ -71,7 +71,7 @@ jobs:
           cargo msrv set "$MSRV"
       - name: Install Trunk CLI
         run: |
-          curl -LO https://trunk.io/releases/trunk
+          curl -sSLf https://trunk.io/releases/trunk -o trunk
           chmod +x trunk
           mkdir -p "$HOME/.cargo/bin"
           mv trunk "$HOME/.cargo/bin"
