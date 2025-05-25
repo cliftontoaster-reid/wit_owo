@@ -1,11 +1,15 @@
 use bytes::Bytes;
+
+#[cfg(feature = "async")]
 use futures::stream::Stream;
 #[cfg(feature = "async")]
 use reqwest::Body;
 #[cfg(feature = "blocking")]
 use reqwest::blocking::Body as BlockingBody;
 use serde::Deserialize;
-use std::{fmt::Debug, pin::Pin};
+use std::fmt::Debug;
+#[cfg(feature = "async")]
+use std::pin::Pin;
 
 /// Represents the encoding format of the audio data.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -163,7 +167,9 @@ impl std::fmt::Display for DictationQuery {
 pub enum AudioSource {
   /// Represents a buffered audio source.
   Buffered(Bytes),
+
   /// Represents a streaming audio source.
+  #[cfg(feature = "async")]
   Stream(Pin<Box<dyn Stream<Item = Result<Bytes, reqwest::Error>> + Send>>),
 }
 
@@ -177,6 +183,7 @@ impl Debug for AudioSource {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     match self {
       AudioSource::Buffered(_) => write!(f, "AudioSource::Buffered"),
+      #[cfg(feature = "async")]
       AudioSource::Stream(_) => write!(f, "AudioSource::Stream"),
     }
   }
@@ -187,6 +194,7 @@ impl From<AudioSource> for Body {
   fn from(source: AudioSource) -> Body {
     match source {
       AudioSource::Buffered(bytes) => Body::from(bytes),
+      #[cfg(feature = "async")]
       AudioSource::Stream(stream) => Body::wrap_stream(stream),
     }
   }
@@ -197,6 +205,7 @@ impl From<AudioSource> for BlockingBody {
   fn from(source: AudioSource) -> BlockingBody {
     match source {
       AudioSource::Buffered(bytes) => BlockingBody::from(bytes),
+      #[cfg(feature = "async")]
       AudioSource::Stream(_) => panic!("BlockingBody cannot be created from a stream"),
     }
   }
@@ -208,6 +217,7 @@ impl From<Bytes> for AudioSource {
   }
 }
 
+#[cfg(feature = "async")]
 impl From<Pin<Box<dyn Stream<Item = Result<Bytes, reqwest::Error>> + Send>>> for AudioSource {
   fn from(stream: Pin<Box<dyn Stream<Item = Result<Bytes, reqwest::Error>> + Send>>) -> Self {
     AudioSource::Stream(stream)
@@ -228,8 +238,8 @@ impl From<&[u8]> for AudioSource {
 
 impl AudioSource {
   /// Converts the audio source into a `Body` for use in HTTP requests.
-  /// Converts the audio source into a `Body` for use in HTTP requests.
-  pub fn into_body(self) -> Body {
+  #[cfg(feature = "async")]
+  pub fn into_body(self) -> reqwest::Body {
     self.into()
   }
 
@@ -251,6 +261,7 @@ impl AudioSource {
   ///
   /// # Returns
   /// A new `AudioSource::Stream` wrapping the provided stream.
+  #[cfg(feature = "async")]
   pub fn new_stream(
     stream: Pin<Box<dyn Stream<Item = Result<Bytes, reqwest::Error>> + Send>>,
   ) -> Self {

@@ -143,7 +143,7 @@ wit_owo = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 ## Example
 
-```rust
+```rust,ignore
 use dotenvy::dotenv;
 use wit_owo::prelude::*;
 

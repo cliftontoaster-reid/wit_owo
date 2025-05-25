@@ -2,6 +2,8 @@ use crate::error::ApiError;
 use crate::model::dictation::{Dictation, DictationQuery};
 use crate::prelude::WitClient;
 use crate::utils::json::extract_complete_json;
+
+#[cfg(feature = "async")]
 use futures::stream::{Stream, StreamExt};
 
 impl WitClient {
@@ -238,6 +240,8 @@ mod tests {
   use crate::utils::tests::levenshtein_distance;
   use bytes::Bytes;
   use dotenvy::dotenv;
+
+  #[cfg(feature = "async")]
   use futures::stream::StreamExt;
   use std::env;
 
