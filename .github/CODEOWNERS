@@ -4,6 +4,6 @@
 
 # Explicit ownership for core directories
 
-/src/utils/ @cliftontoaster-reid
-/src/model/ @cliftontoaster-reid
-/src/api/ @cliftontoaster-reid
+/src/utils/* @cliftontoaster-reid
+/src/model/* @cliftontoaster-reid
+/src/api/* @cliftontoaster-reid
