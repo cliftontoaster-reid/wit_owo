@@ -2,3 +2,4 @@
 .idea/
 *.iml
 .env
+.vscode/ltex.hiddenFalsePositives.en-GB.txt
