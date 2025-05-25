@@ -103,9 +103,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Comprehensive Testing: Unit tests with real API integration
 - Full rustdoc documentation with examples
 
-## [1.0.0] - Initial Release
+## [1.0.1] - Initial Release
 
-### Added to 1.0.0
+### Added to 1.0.1
 
 - Initial project structure
 - Basic Wit.AI API client foundation
