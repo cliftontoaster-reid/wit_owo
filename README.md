@@ -49,7 +49,7 @@ wit_api = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 - ❌ POST `/speech`
 
-- ⚠️ GET `/message`
+- ✔️ GET `/message`
 
 - ❌ POST `/dictation`
 
