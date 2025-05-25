@@ -2,7 +2,6 @@
 name = "wit_owo"
 version = "1.0.4"
 edition = "2024"
-rust-version = "1.85.0"
 authors = ["Clifton Toaster Reid <clifton.toaster.reid@proton.me>"]
 categories = ["api-bindings", "text-processing"]
 description = "A Rust library for interacting with the Wit.ai API."
@@ -11,6 +10,7 @@ repository = "https://github.com/cliftontoaster-reid/wit_owo"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["wit-ai", "api", "nlp", "nlu"]
+rust-version = "1.85.0"
 
 [package.metadata.docs.rs]
 all-features = true
