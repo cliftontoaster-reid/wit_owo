@@ -8,7 +8,7 @@ use serde::Deserialize;
 use std::{fmt::Debug, pin::Pin};
 
 /// Represents the encoding format of the audio data.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Encoding {
   /// Waveform Audio File Format.
   #[default]
@@ -124,7 +124,7 @@ impl std::fmt::Display for DictationQuery {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let raw: Result<String, std::fmt::Error> = match &self.encoding {
       Encoding::Wav => Ok("audio/wav".to_string()),
-      Encoding::Mp3 => Ok("audio/mp3".to_string()),
+      Encoding::Mp3 => Ok("audio/mpeg3".to_string()),
       Encoding::Ogg => Ok("audio/ogg".to_string()),
       Encoding::Ulaw => Ok("audio/ulaw".to_string()),
       Encoding::Raw => {
