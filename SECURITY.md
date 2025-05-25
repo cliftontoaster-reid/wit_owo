@@ -54,13 +54,16 @@ We follow a responsible disclosure model. We will not publicly disclose any vuln
 
 We maintain the following release range:
 
-- **Current stable release** (latest major version)
-- **Two preceding major versions**
+- **Current stable release** (latest version)
+- **Previous minor versions** within the current major version
+- **Previous major version** (critical security fixes only, best effort)
 
 ### Backport Strategy
 
-Critical fixes and security patches will be backported to every supported release line.
+- **Patch releases**: All fixes within the current major version
+- **Critical security fixes**: May be backported to the previous major version when feasible
+- **Non-critical fixes**: Current major version only
 
 ### Upgrade Recommendation
 
-To ensure you receive the latest security fixes, please upgrade to the current stable release (v0.3.x) as soon as possible.
+To ensure you receive the latest security fixes and features, please upgrade to the current stable release as soon as possible. We strongly recommend staying within the current major version for full support.
