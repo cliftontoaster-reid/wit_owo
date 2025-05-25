@@ -1,10 +1,8 @@
 use crate::error::ApiError;
 use crate::model::dictation::{Dictation, DictationQuery};
-use crate::prelude::BASE_URL;
 use crate::prelude::WitClient;
 use crate::utils::json::extract_complete_json;
 use futures::stream::{Stream, StreamExt};
-use url::Url;
 
 impl WitClient {
   /// Performs speech-to-text dictation using the Wit.ai API.
@@ -82,7 +80,7 @@ impl WitClient {
 
     try_stream! {
       let content_type = params.to_string();
-      let url = Url::parse(&format!("{BASE_URL}dictation"))?;
+      let url = params.to_url()?;
 
       let request = self
         .prepare_post_request(url)
@@ -197,7 +195,7 @@ impl WitClient {
     use crate::error::WitError;
 
     let content_type = params.to_string();
-    let url = Url::parse(&format!("{BASE_URL}dictation"))?;
+    let url = params.to_url()?;
 
     let request = self
       .prepare_post_blocking(url)
@@ -240,23 +238,32 @@ mod tests {
   use crate::utils::tests::levenshtein_distance;
   use bytes::Bytes;
   use dotenvy::dotenv;
+  use futures::stream::StreamExt;
   use std::env;
 
   const EXPECTED_TEXT: &str = "the examination and testimony of the experts enabled the commission to conclude that five shots may have been fired";
 
+  /// Helper function to test async dictation with buffered audio data
   #[cfg(feature = "async")]
-  #[tokio::test]
-  async fn test_post_dictation() {
+  async fn test_async_dictation_buffered(
+    encoding: Encoding,
+    audio_data: Vec<u8>,
+    format_name: &str,
+  ) {
     dotenv().ok();
     let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
     let client = WitClient::new(&token);
 
-    let params = DictationQuery::new(
-      Encoding::Wav,
-      AudioSource::Buffered(Bytes::from(
-        include_bytes!("../../assets/test.wav").as_ref(),
-      )),
-    );
+    let mut params = DictationQuery::new(encoding, AudioSource::Buffered(Bytes::from(audio_data)));
+
+    if encoding == Encoding::Raw {
+      // For RAW encoding, we need to specify additional parameters
+      params = params
+        .with_bits(8)
+        .with_sample_rate(8000)
+        .with_endian(true)
+        .with_raw_encoding("unsigned-integer".to_string());
+    }
 
     let mut stream = Box::pin(client.post_dictation(params).await);
     let mut received_results = false;
@@ -267,35 +274,192 @@ mod tests {
         Ok(dictation) => {
           assert!(
             !dictation.text.is_empty(),
-            "Dictation text should not be empty"
+            "Dictation text should not be empty for {format_name} format",
           );
-          println!("Transcription: {}", dictation.text);
+          println!("{format_name} Transcription: {}", dictation.text);
           received_results = true;
           last_dictation = Some(dictation);
         }
         Err(e) => {
-          panic!("Dictation failed with error: {e:?}");
+          panic!("Dictation failed with error for {format_name} format: {e:?}",);
         }
       }
     }
 
     assert!(
       received_results,
-      "Should have received at least one dictation result"
+      "Should have received at least one dictation result for {format_name} format",
     );
 
     if let Some(dictation) = last_dictation {
       assert!(
         !dictation.text.is_empty(),
-        "Last dictation text should not be empty"
+        "Last dictation text should not be empty for {format_name} format",
       );
       assert!(
         levenshtein_distance(dictation.text.to_ascii_lowercase().as_str(), EXPECTED_TEXT) < 5,
-        "Last dictation text is not similar enough to expected text"
+        "Last dictation text is not similar enough to expected text for {format_name} format",
       );
     } else {
-      panic!("No dictation results were received");
+      panic!("No dictation results were received for {format_name} format",);
     }
+  }
+
+  /// Helper function to test async dictation with streaming audio data
+  #[cfg(feature = "async")]
+  async fn test_async_dictation_streaming(
+    encoding: Encoding,
+    audio_data: Vec<u8>,
+    format_name: &str,
+  ) {
+    dotenv().ok();
+    let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+    let client = WitClient::new(&token);
+
+    let chunk_size = 1024;
+
+    // Clone the data for the closure
+    let data_clone = audio_data.clone();
+
+    // Turn the static byte slice into a stream of `Bytes` chunks
+    let audio_stream = futures::stream::iter(
+      data_clone
+        .chunks(chunk_size)
+        .map(|chunk| Ok::<Bytes, reqwest::Error>(Bytes::copy_from_slice(chunk)))
+        .collect::<Vec<_>>(),
+    );
+
+    // Build the dictation query using the streaming audio source
+    let mut params = DictationQuery::new(encoding, AudioSource::Stream(Box::pin(audio_stream)));
+
+    if encoding == Encoding::Raw {
+      // For RAW encoding, we need to specify additional parameters
+      params = params
+        .with_bits(8)
+        .with_sample_rate(8000)
+        .with_endian(true)
+        .with_raw_encoding("unsigned-integer".to_string());
+    }
+
+    // Send to Wit.ai and collect the streaming results
+    let mut stream = Box::pin(client.post_dictation(params).await);
+    let mut received = false;
+    let mut last_dictation = None;
+
+    while let Some(item) = stream.next().await {
+      let dict = item
+        .unwrap_or_else(|e| panic!("streaming dictation failed for {format_name} format: {e:?}",));
+      assert!(
+        !dict.text.is_empty(),
+        "Dictation text should not be empty for {format_name} format"
+      );
+      received = true;
+      last_dictation = Some(dict);
+    }
+
+    assert!(
+      received,
+      "Should have received at least one dictation result for {format_name} format"
+    );
+
+    let final_dict = last_dictation
+      .unwrap_or_else(|| panic!("No dictation results were received for {format_name} format",));
+    assert!(
+      levenshtein_distance(final_dict.text.to_ascii_lowercase().as_str(), EXPECTED_TEXT) < 5,
+      "Last dictation text is not similar enough to expected text for {format_name} format"
+    );
+  }
+
+  // MP3 Tests
+  #[cfg(feature = "async")]
+  #[tokio::test]
+  async fn test_post_dictation_mp3_buffered() {
+    test_async_dictation_buffered(
+      Encoding::Mp3,
+      include_bytes!("../../assets/test.mp3").to_vec(),
+      "MP3",
+    )
+    .await;
+  }
+
+  #[cfg(feature = "async")]
+  #[tokio::test]
+  async fn test_post_dictation_mp3_streaming() {
+    test_async_dictation_streaming(
+      Encoding::Mp3,
+      include_bytes!("../../assets/test.mp3").to_vec(),
+      "MP3",
+    )
+    .await;
+  }
+
+  // OGG Tests
+  #[cfg(feature = "async")]
+  #[tokio::test]
+  async fn test_post_dictation_ogg_buffered() {
+    test_async_dictation_buffered(
+      Encoding::Ogg,
+      include_bytes!("../../assets/test.ogg").to_vec(),
+      "OGG",
+    )
+    .await;
+  }
+
+  #[cfg(feature = "async")]
+  #[tokio::test]
+  async fn test_post_dictation_ogg_streaming() {
+    test_async_dictation_streaming(
+      Encoding::Ogg,
+      include_bytes!("../../assets/test.ogg").to_vec(),
+      "OGG",
+    )
+    .await;
+  }
+
+  // WAV Tests
+  #[cfg(feature = "async")]
+  #[tokio::test]
+  async fn test_post_dictation_wav_buffered() {
+    test_async_dictation_buffered(
+      Encoding::Wav,
+      include_bytes!("../../assets/test.wav").to_vec(),
+      "WAV",
+    )
+    .await;
+  }
+
+  #[cfg(feature = "async")]
+  #[tokio::test]
+  async fn test_post_dictation_wav_streaming() {
+    test_async_dictation_streaming(
+      Encoding::Wav,
+      include_bytes!("../../assets/test.wav").to_vec(),
+      "WAV",
+    )
+    .await;
+  }
+
+  // RAW Tests (PCM 8kHz, u8)
+  #[cfg(feature = "async")]
+  #[tokio::test]
+  async fn test_post_dictation_raw_buffered() {
+    test_async_dictation_buffered(
+      Encoding::Raw, // 8kHz, 8-bit, mono
+      include_bytes!("../../assets/test.raw").to_vec(),
+      "RAW",
+    )
+    .await;
+  }
+
+  #[cfg(feature = "async")]
+  #[tokio::test]
+  async fn test_post_dictation_raw_streaming() {
+    test_async_dictation_streaming(
+      Encoding::Raw, // 8kHz, 8-bit, mono
+      include_bytes!("../../assets/test.raw").to_vec(),
+      "RAW",
+    )
+    .await;
   }
 
   #[cfg(feature = "blocking")]

@@ -8,7 +8,7 @@ use serde::Deserialize;
 use std::{fmt::Debug, pin::Pin};
 
 /// Represents the encoding format of the audio data.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Encoding {
   /// Waveform Audio File Format.
   #[default]
@@ -63,13 +63,68 @@ impl DictationQuery {
       ..Default::default()
     }
   }
+
+  /// Sets the raw encoding type for raw audio data.
+  pub fn with_raw_encoding(mut self, raw_encoding: String) -> Self {
+    self.raw_encoding = Some(raw_encoding);
+    self
+  }
+
+  /// Sets the bit depth of the audio samples.
+  pub fn with_bits(mut self, bits: u8) -> Self {
+    self.bits = Some(bits);
+    self
+  }
+
+  /// Sets the sample rate in Hertz.
+  pub fn with_sample_rate(mut self, sample_rate: u16) -> Self {
+    self.sample_rate = Some(sample_rate);
+    self
+  }
+
+  /// Sets the endianness of the audio data.
+  /// `true` for little-endian, `false` for big-endian.
+  pub fn with_endian(mut self, endian: bool) -> Self {
+    self.endian = Some(endian);
+    self
+  }
+
+  /// Generates the URL with query parameters for the dictation request.
+  pub(crate) fn to_url(&self) -> Result<url::Url, crate::error::ApiError> {
+    use crate::prelude::BASE_URL;
+    use url::Url;
+
+    let mut params: Vec<(String, String)> = Vec::new();
+
+    // Add raw encoding parameters as query parameters if present
+    if let Some(raw_encoding) = &self.raw_encoding {
+      params.push(("encoding".to_string(), raw_encoding.clone()));
+    }
+
+    if let Some(bits) = self.bits {
+      params.push(("bits".to_string(), bits.to_string()));
+    }
+
+    if let Some(sample_rate) = self.sample_rate {
+      params.push(("rate".to_string(), sample_rate.to_string()));
+    }
+
+    if let Some(endian) = self.endian {
+      params.push((
+        "endian".to_string(),
+        (if endian { "little" } else { "big" }).to_string(),
+      ));
+    }
+
+    Url::parse_with_params(&format!("{BASE_URL}dictation"), params).map_err(|e| e.into())
+  }
 }
 
 impl std::fmt::Display for DictationQuery {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
     let raw: Result<String, std::fmt::Error> = match &self.encoding {
       Encoding::Wav => Ok("audio/wav".to_string()),
-      Encoding::Mp3 => Ok("audio/mp3".to_string()),
+      Encoding::Mp3 => Ok("audio/mpeg3".to_string()),
       Encoding::Ogg => Ok("audio/ogg".to_string()),
       Encoding::Ulaw => Ok("audio/ulaw".to_string()),
       Encoding::Raw => {
