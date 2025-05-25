@@ -1,0 +1,9 @@
+# Default owner for all files
+
+* @cliftontoaster-reid
+
+# Explicit ownership for core directories
+
+/src/utils/ @cliftontoaster-reid
+/src/model/ @cliftontoaster-reid
+/src/api/ @cliftontoaster-reid
