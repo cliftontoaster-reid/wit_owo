@@ -28,13 +28,21 @@ This project is licensed under both the MIT and Apache 2.0 licences. You can fin
 
 Please note that I am not affiliated with Wit.AI or Meta. This project is a personal endeavour and is not officially endorsed by Wit.AI or Meta.
 
+## Updates & Community
+
+For the latest updates, announcements, and discussions about this crate, follow me on Mastodon:
+
+🐘 **[@CliftonToasterReid@floofy.tech](https://floofy.tech/@CliftonToasterReid)**
+
+Feel free to reach out if you have questions, suggestions, or just want to share how you're using the crate!
+
 ## Usage
 
 To use this library, add the following to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-wit_api = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
+wit_owo = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 ```
 
 ### API paths support
@@ -49,9 +57,9 @@ wit_api = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 - ❌ POST `/speech`
 
-- ⚠️ GET `/message`
+- ✔️ GET `/message`
 
-- ❌ POST `/dictation`
+- ⚠️ POST `/dictation`
 
 - ❌ POST `/synthesize`
 
