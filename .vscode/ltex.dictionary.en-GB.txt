@@ -7,3 +7,5 @@ MessageQuery
 rustdoc
 LICEcap
 SimpleScreenRecorder
+CODEOWNERS
+endianness
