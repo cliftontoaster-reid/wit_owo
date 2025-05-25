@@ -135,7 +135,7 @@ wit_api = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 ## Example
 
-```rust
+```rust,ignore
 use dotenv::dotenv;
 use wit_owo::prelude::*;
 
