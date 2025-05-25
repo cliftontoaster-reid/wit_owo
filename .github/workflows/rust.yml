@@ -2,8 +2,22 @@ name: Rust Continuous Testing Integration
 on:
   push:
     branches: [main]
+    paths:
+      - src/**
+      - Cargo.toml
+      - Cargo.lock
+      - assets/**
+      - .trunk/**
+      - .github/workflows/rust.yml
   pull_request:
     branches: [main]
+    paths:
+      - src/**
+      - Cargo.toml
+      - Cargo.lock
+      - assets/**
+      - .trunk/**
+      - .github/workflows/rust.yml
 permissions:
   contents: write # allow commits+pushing
 jobs:
