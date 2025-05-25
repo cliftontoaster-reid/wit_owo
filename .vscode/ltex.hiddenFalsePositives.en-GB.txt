@@ -1,0 +1,7 @@
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\QInstances of abusive, harassing, or otherwise unacceptable behaviour may be reported to the community leaders responsible for enforcement at .\\E$"}
+{"rule":"EN_A_VS_AN","sentence":"^\\QIf it fails, the \\E(?:Dummy|Ina|Jimmy-|Dummy-|Maniquí-|Maniquíes-)[0-9]+\\Q operator will return an \\E(?:Dummy|Ina|Jimmy-|Dummy-|Maniquí-|Maniquíes-)[0-9]+\\Q from \\E(?:Dummy|Ina|Jimmy-|Dummy-|Maniquí-|Maniquíes-)[0-9]+\\Q, causing the program to exit with an error.\\E$"}
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\QPlease report unacceptable behavior to .\\E$"}
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\QPlease report unacceptable behaviour to .\\E$"}
+{"rule":"COMMA_PARENTHESIS_WHITESPACE","sentence":"^\\QInstead, sensitive bugs must be sent by email to .\\E$"}
+{"rule":"MORFOLOGIK_RULE_EN_GB","sentence":"^\\QOpen VS Code\nGo to the Extensions view (Ctrl+Shift+X)\nSearch for rust-analyzer and install the \"Rust Analyzer\" extension\nSearch for CodeLLDB (vadimcn.vscode-lldb) and install the debugging extension\nSearch for Even Better TOML (tamasfe.even-better-toml) and install the TOML support extension\\E$"}
+{"rule":"ENGLISH_WORD_REPEAT_RULE","sentence":"^\\QYour First Code Contribution\nSetting up Rust Nightly\nSetting up Visual Studio Code\nProject Setup\nImproving The Documentation\nDocumentation Guidelines\nBuilding Documentation Locally\nDocumentation Best Practices\nCommit Messages\nFormat\nGuidelines\nValid Types\nScope Examples\nExamples\nAttribution\\E$"}

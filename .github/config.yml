@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 General Questions & Support
+    url: https://github.com/cliftontoaster-reid/wit_owo/discussions
+    about: Ask questions and discuss with the community
+  - name: 🔒 Security Issues
+    url: mailto:clifton.toaster.reid@proton.me
+    about: Report security vulnerabilities privately
+  - name: 📖 Documentation
+    url: https://docs.rs/wit_owo/latest/wit_owo/
+    about: Check the project documentation
