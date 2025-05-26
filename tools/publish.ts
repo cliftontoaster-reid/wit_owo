@@ -1,4 +1,8 @@
 import { parse } from "jsr:@std/toml";
+import { CargoToml } from "./cargo-toml.d.ts";
+
+let defaultTarget: string | undefined;
+
 /**
  * Run tests for the wit_owo Rust project
  * @param features - Array of feature flags to enable (e.g., ['async', 'blocking'])
@@ -87,12 +91,18 @@ async function runTests(features: string[], mode: number): Promise<void> {
 
     console.log("🎉 All requested tests completed successfully!");
   } catch (error) {
-    console.error("❌ Test execution failed:", error);
-    throw error;
+    console.error(
+      `❌ Test execution failed for features [${features.join(", ")}]:`,
+      error,
+    );
+    console.error(
+      `🔥 Exiting due to test failure for features [${features.join(", ")}]...`,
+    );
+    Deno.exit(1);
   }
 }
 
-async function runClippy(features: string[]): Promise<void> {
+async function runClippy(features: string[], target?: string): Promise<void> {
   const featureFlags =
     features.length > 0
       ? `--no-default-features --features ${features.join(",")}`
@@ -104,6 +114,11 @@ async function runClippy(features: string[]): Promise<void> {
     ...featureFlags.split(" ").filter((arg) => arg),
   ];
 
+  // Only add target specification if target is provided
+  if (target) {
+    clippyArgs.push("--target", target);
+  }
+
   const clippyCmd = new Deno.Command("cargo", {
     args: clippyArgs,
     cwd: Deno.cwd(),
@@ -114,37 +129,86 @@ async function runClippy(features: string[]): Promise<void> {
 
   const result = await clippyCmd.output();
   if (!result.success) {
-    throw new Error(`Clippy failed with exit code ${result.code}`);
+    const targetInfo = target ? ` on target ${target}` : "";
+    console.error(
+      `❌ Clippy failed with exit code ${result.code} for features [${features.join(
+        ", ",
+      )}]${targetInfo}`,
+    );
+    console.error(
+      `🔥 Exiting due to Clippy failure for features [${features.join(
+        ", ",
+      )}]${targetInfo}...`,
+    );
+    Deno.exit(1);
   }
   console.log("✅ Clippy passed!");
 }
 
-function runSuite(features: string[], mode: number, clippyOnly = false): void {
-  if (clippyOnly) {
-    console.log(
-      `\n📎 Running Clippy only for features: [${features.join(", ")}]`,
+async function runSuite(
+  features: string[],
+  mode: number,
+  targets: string[],
+  clippyOnly = false,
+): Promise<void> {
+  // If no targets specified, run once without target specification
+  const targetsToRun = targets.length > 0 ? targets : [undefined];
+
+  for (const t of targetsToRun) {
+    if (clippyOnly) {
+      console.log(
+        `\n📎 Running Clippy only for features: [${features.join(", ")}]`,
+      );
+
+      try {
+        await runClippy(features, t);
+      } catch (error) {
+        const targetInfo = t ? ` on target ${t}` : "";
+        console.error(
+          `❌ Clippy execution failed for features [${features.join(", ")}]${targetInfo}:`,
+          error,
+        );
+        console.error(
+          `🔥 Exiting due to Clippy failure for features [${features.join(
+            ", ",
+          )}]${targetInfo}...`,
+        );
+        Deno.exit(1);
+      }
+    } else {
+      console.log(
+        `\n🔀 Testing features: [${features.join(", ")}] and mode: ${mode
+          .toString(2)
+          .padStart(2, "0")}b`,
+      );
+
+      try {
+        await runClippy(features, t);
+      } catch (error) {
+        const targetInfo = t ? ` on target ${t}` : "";
+        console.error(
+          `❌ Test execution failed for features [${features.join(", ")}]${targetInfo}:`,
+          error,
+        );
+        console.error(
+          `🔥 Exiting due to test failure for features [${features.join(", ")}]${targetInfo}...`,
+        );
+        Deno.exit(1);
+      }
+    }
+  }
+
+  try {
+    await runTests(features, mode);
+  } catch (error) {
+    console.error(
+      `❌ Test execution failed for features [${features.join(", ")}]:`,
+      error,
     );
-
-    runClippy(features).catch((error) => {
-      console.error("❌ Clippy execution failed:", error);
-      throw error;
-    });
-  } else {
-    console.log(
-      `\n🔀 Testing features: [${features.join(", ")}] and mode: ${mode
-        .toString(2)
-        .padStart(2, "0")}b`,
+    console.error(
+      `🔥 Exiting due to test failure for features [${features.join(", ")}]...`,
     );
-
-    runClippy(features).catch((error) => {
-      console.error("❌ Clippy execution failed:", error);
-      throw error;
-    });
-
-    runTests(features, mode).catch((error) => {
-      console.error("❌ Test execution failed:", error);
-      throw error;
-    });
+    Deno.exit(1);
   }
 }
 
@@ -161,6 +225,96 @@ function getCombinations<T>(arr: T[]): T[][] {
   return result;
 }
 
+function updateInstallTargets(targets: string[]): void {
+  // We get the list of targets installed
+  let targetsInstalled: string[] = [];
+  {
+    try {
+      const output = new Deno.Command("rustup", {
+        args: ["target", "list", "--installed"],
+        stdout: "piped",
+      }).outputSync();
+      targetsInstalled = new TextDecoder()
+        .decode(output.stdout)
+        .trim()
+        .split("\n");
+    } catch (error) {
+      console.error("❌ Failed to get installed targets:", error);
+      Deno.exit(1);
+    }
+  }
+  // We get the available targets
+  let targetsAvailable: string[] = [];
+  {
+    try {
+      const output = new Deno.Command("rustup", {
+        args: ["target", "list", "--quiet"],
+        stdout: "piped",
+      }).outputSync();
+      targetsAvailable = new TextDecoder()
+        .decode(output.stdout)
+        .trim()
+        .split("\n");
+    } catch (error) {
+      console.error("❌ Failed to get available targets:", error);
+      Deno.exit(1);
+    }
+  }
+
+  // We go through the targets and check if they are installed
+  // if not we check if they are available, and install them
+  // after updating the targets installed
+  try {
+    const cmd = new Deno.Command("rustup", {
+      args: ["update"],
+      stdout: "inherit",
+      stderr: "inherit",
+      stdin: "inherit",
+    });
+
+    const result = cmd.outputSync();
+    if (!result.success) {
+      console.error("❌ Failed to update targets:", result);
+      Deno.exit(1);
+    }
+  } catch (error) {
+    console.error("❌ Error updating targets:", error);
+    Deno.exit(1);
+  }
+
+  for (const target of targets) {
+    if (!targetsInstalled.includes(target)) {
+      if (targetsAvailable.includes(target)) {
+        console.log(`🔄 Installing target: ${target}`);
+        try {
+          const installCmd = new Deno.Command("rustup", {
+            args: ["target", "add", target],
+            stdout: "inherit",
+            stderr: "inherit",
+            stdin: "inherit",
+          });
+          const installResult = installCmd.outputSync();
+          if (!installResult.success) {
+            console.error(
+              `❌ Failed to install target ${target}:`,
+              installResult,
+            );
+            Deno.exit(1);
+          }
+          console.log(`✅ Target ${target} installed successfully.`);
+        } catch (error) {
+          console.error(`❌ Error installing target ${target}:`, error);
+          Deno.exit(1);
+        }
+      } else {
+        console.warn(`⚠️ Target ${target} is not available for installation.`);
+      }
+    } else {
+      console.log(`✅ Target ${target} is already installed.`);
+    }
+  }
+}
+
 // Example usage (uncomment to test):
 // await runTests(["async"], 0b11); // Run all tests with async feature
 // await runTests(["blocking"], 0b01); // Run only library tests with blocking feature
@@ -168,73 +322,93 @@ function getCombinations<T>(arr: T[]): T[][] {
 
 // If running this file directly with Deno
 if (import.meta.main) {
-  // Check for --clippy flag
-  const clippyOnly = Deno.args.includes("--clippy");
-
-  if (clippyOnly) {
-    console.log("🔧 Clippy-only mode enabled. Skipping tests.");
-  }
-
-  // Read the Cargo.toml file from either current directory or parent directory
-  let cargoData: string;
-
   try {
-    cargoData = await Deno.readTextFile("Cargo.toml");
-  } catch {
-    cargoData = await Deno.readTextFile("../Cargo.toml");
-  }
+    // Check for --clippy flag
+    const clippyOnly = Deno.args.includes("--clippy");
 
-  // Parse the Cargo.toml file
-  const cargoToml = parse(cargoData);
-
-  // Extract features from the Cargo.toml file
-  const features = Object.keys(cargoToml.features || {});
-
-  // We exclude the "default" feature from the list
-  const availableFeatures = features.filter((feature) => feature !== "default");
-
-  // We then build every possible combination of features
-  // Though it should not make a combination where
-  // no features are selected, as well as where for two features
-  // are activated, and one requires the other, we need to account for that.
-  // Build all non-empty subsets of availableFeatures
-  const deps = cargoToml.features as Record<string, string[]>;
-  const allCombos = getCombinations(availableFeatures);
-
-  // Filter out combos missing any internal dependency
-  const validCombos = allCombos.filter((combo) =>
-    combo.every((f) => {
-      const reqs = deps[f] || [];
-      return reqs.every(
-        (dep) => !availableFeatures.includes(dep) || combo.includes(dep),
-      );
-    }),
-  );
-
-  // Run library tests for each valid combination of features
-  for (const combo of validCombos) {
     if (clippyOnly) {
-      console.log(`\nRunning Clippy for features: [${combo.join(", ")}]`);
-      runSuite(combo, 0b01, true); // clippy only
-    } else {
-      console.log(
-        `\nRunning library tests for features: [${combo.join(", ")}]`,
-      );
-      runSuite(combo, 0b01); // library tests only
+      console.log("🔧 Clippy-only mode enabled. Skipping tests.");
     }
-  }
 
-  if (!clippyOnly) {
-    // Run a single doc test with the full feature set
-    console.log(
-      `\nRunning doc tests for full feature set: [${availableFeatures.join(", ")}]`,
+    // Read the Cargo.toml file from either current directory or parent directory
+    let cargoData: string;
+
+    try {
+      cargoData = await Deno.readTextFile("Cargo.toml");
+    } catch {
+      cargoData = await Deno.readTextFile("../Cargo.toml");
+    }
+
+    // Parse the Cargo.toml file
+    const cargoToml: CargoToml = parse(cargoData);
+
+    // Extract features from the Cargo.toml file
+    const features = Object.keys(cargoToml.features || {});
+
+    // We exclude the "default" feature from the list
+    const availableFeatures = features.filter(
+      (feature) => feature !== "default",
     );
-    runSuite(availableFeatures, 0b10); // doc tests only
-  } else {
-    // Run clippy with the full feature set
-    console.log(
-      `\nRunning Clippy for full feature set: [${availableFeatures.join(", ")}]`,
+
+    // We then build every possible combination of features
+    // Though it should not make a combination where
+    // no features are selected, as well as where for two features
+    // are activated, and one requires the other, we need to account for that.
+    // Build all non-empty subsets of availableFeatures
+    const deps = cargoToml.features as Record<string, string[]>;
+    const defaultTarget =
+      cargoToml.package?.metadata?.docs.rs?.["default-target"];
+    const allTargets = cargoToml.package?.metadata?.docs.rs?.targets || [];
+    if (defaultTarget && !allTargets.includes(defaultTarget)) {
+      allTargets.push(defaultTarget);
+    }
+
+    // Determine targets based on OS - only use all targets on Linux
+    const isLinux = Deno.build.os === "linux";
+    const targets = isLinux ? allTargets : [];
+
+    if (isLinux) {
+      updateInstallTargets(targets);
+      console.log(`Running for all targets on Linux: [${targets.join(", ")}]`);
+    } else {
+      console.log(`Running without specific targets on ${Deno.build.os}`);
+    }
+    const allCombos = getCombinations(availableFeatures);
+
+    // Filter out combos missing any internal dependency
+    const validCombos = allCombos.filter((combo) =>
+      combo.every((f) => {
+        const reqs = deps[f] || [];
+        return reqs.every(
+          (dep) => !availableFeatures.includes(dep) || combo.includes(dep),
+        );
+      }),
     );
-    runSuite(availableFeatures, 0b10, true); // clippy only
+
+    // Run library tests for each valid combination of features
+    for (const combo of validCombos) {
+      if (clippyOnly) {
+        console.log(`\nRunning Clippy for features: [${combo.join(", ")}]`);
+        await runSuite(combo, 0b01, targets, true); // clippy only
+      } else {
+        console.log(
+          `\nRunning library tests for features: [${combo.join(", ")}]`,
+        );
+        await runSuite(combo, 0b01, targets); // library tests only
+      }
+    }
+
+    const header = clippyOnly
+      ? `\nRunning Clippy for full feature set: [${availableFeatures.join(", ")}]`
+      : `\nRunning doc tests for full feature set: [${availableFeatures.join(", ")}]`;
+
+    console.log(header);
+    await runSuite(availableFeatures, 0b10, targets, clippyOnly);
+
+    console.log("\n🎉 All operations completed successfully!");
+  } catch (error) {
+    console.error("❌ Script execution failed:", error);
+    console.error("🔥 Exiting due to unexpected error...");
+    Deno.exit(1);
   }
 }
