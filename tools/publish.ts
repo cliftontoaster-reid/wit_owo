@@ -1,16 +1,14 @@
 import { parse } from "jsr:@std/toml";
 import { CargoToml } from "./cargo-toml.d.ts";
 
+let defaultTarget: string | undefined;
+
 /**
  * Run tests for the wit_owo Rust project
  * @param features - Array of feature flags to enable (e.g., ['async', 'blocking'])
  * @param mode - 2-bit number: 0b01 = library tests only, 0b10 = doc tests only, 0b11 = all tests
  */
-async function runTests(
-  features: string[],
-  mode: number,
-  target: string,
-): Promise<void> {
+async function runTests(features: string[], mode: number): Promise<void> {
   // Validate mode is a 2-bit number (0-3)
   if (mode < 0 || mode > 3) {
     throw new Error("Mode must be a 2-bit number (0-3)");
@@ -39,8 +37,6 @@ async function runTests(
       const libTestArgs = [
         "test",
         ...featureFlags.split(" ").filter((arg) => arg),
-        "--target",
-        target,
       ];
       console.log(`Executing: cargo ${libTestArgs.join(" ")}`);
 
@@ -68,8 +64,6 @@ async function runTests(
         "test",
         "--doc",
         ...featureFlags.split(" ").filter((arg) => arg),
-        "--target",
-        target,
       ];
       console.log(`Executing: cargo ${docTestArgs.join(" ")}`);
 
@@ -98,11 +92,11 @@ async function runTests(
     console.log("🎉 All requested tests completed successfully!");
   } catch (error) {
     console.error(
-      `❌ Test execution failed for features [${features.join(", ")}] on target ${target}:`,
+      `❌ Test execution failed for features [${features.join(", ")}]:`,
       error,
     );
     console.error(
-      `🔥 Exiting due to test failure for features [${features.join(", ")}] on target ${target}...`,
+      `🔥 Exiting due to test failure for features [${features.join(", ")}]...`,
     );
     Deno.exit(1);
   }
@@ -182,7 +176,6 @@ async function runSuite(
 
       try {
         await runClippy(features, t);
-        await runTests(features, mode, t);
       } catch (error) {
         console.error(
           `❌ Test execution failed for features [${features.join(", ")}] on target ${t}:`,
@@ -194,6 +187,19 @@ async function runSuite(
         Deno.exit(1);
       }
     }
+  }
+
+  try {
+    await runTests(features, mode);
+  } catch (error) {
+    console.error(
+      `❌ Test execution failed for features [${features.join(", ")}]:`,
+      error,
+    );
+    console.error(
+      `🔥 Exiting due to test failure for features [${features.join(", ")}]...`,
+    );
+    Deno.exit(1);
   }
 }
 
