@@ -102,7 +102,7 @@ async function runTests(features: string[], mode: number): Promise<void> {
   }
 }
 
-async function runClippy(features: string[], target: string): Promise<void> {
+async function runClippy(features: string[], target?: string): Promise<void> {
   const featureFlags =
     features.length > 0
       ? `--no-default-features --features ${features.join(",")}`
@@ -112,9 +112,12 @@ async function runClippy(features: string[], target: string): Promise<void> {
   const clippyArgs = [
     "clippy",
     ...featureFlags.split(" ").filter((arg) => arg),
-    "--target",
-    target,
   ];
+
+  // Only add target specification if target is provided
+  if (target) {
+    clippyArgs.push("--target", target);
+  }
 
   const clippyCmd = new Deno.Command("cargo", {
     args: clippyArgs,
@@ -126,15 +129,16 @@ async function runClippy(features: string[], target: string): Promise<void> {
 
   const result = await clippyCmd.output();
   if (!result.success) {
+    const targetInfo = target ? ` on target ${target}` : "";
     console.error(
       `❌ Clippy failed with exit code ${result.code} for features [${features.join(
         ", ",
-      )}] on target ${target}`,
+      )}]${targetInfo}`,
     );
     console.error(
       `🔥 Exiting due to Clippy failure for features [${features.join(
         ", ",
-      )}] on target ${target}...`,
+      )}]${targetInfo}...`,
     );
     Deno.exit(1);
   }
@@ -147,7 +151,10 @@ async function runSuite(
   targets: string[],
   clippyOnly = false,
 ): Promise<void> {
-  for (const t of targets) {
+  // If no targets specified, run once without target specification
+  const targetsToRun = targets.length > 0 ? targets : [undefined];
+
+  for (const t of targetsToRun) {
     if (clippyOnly) {
       console.log(
         `\n📎 Running Clippy only for features: [${features.join(", ")}]`,
@@ -156,14 +163,15 @@ async function runSuite(
       try {
         await runClippy(features, t);
       } catch (error) {
+        const targetInfo = t ? ` on target ${t}` : "";
         console.error(
-          `❌ Clippy execution failed for features [${features.join(", ")}] on target ${t}:`,
+          `❌ Clippy execution failed for features [${features.join(", ")}]${targetInfo}:`,
           error,
         );
         console.error(
           `🔥 Exiting due to Clippy failure for features [${features.join(
             ", ",
-          )}] on target ${t}...`,
+          )}]${targetInfo}...`,
         );
         Deno.exit(1);
       }
@@ -177,12 +185,13 @@ async function runSuite(
       try {
         await runClippy(features, t);
       } catch (error) {
+        const targetInfo = t ? ` on target ${t}` : "";
         console.error(
-          `❌ Test execution failed for features [${features.join(", ")}] on target ${t}:`,
+          `❌ Test execution failed for features [${features.join(", ")}]${targetInfo}:`,
           error,
         );
         console.error(
-          `🔥 Exiting due to test failure for features [${features.join(", ")}] on target ${t}...`,
+          `🔥 Exiting due to test failure for features [${features.join(", ")}]${targetInfo}...`,
         );
         Deno.exit(1);
       }
@@ -349,12 +358,21 @@ if (import.meta.main) {
     const deps = cargoToml.features as Record<string, string[]>;
     const defaultTarget =
       cargoToml.package?.metadata?.docs.rs?.["default-target"];
-    const targets = cargoToml.package?.metadata?.docs.rs?.targets || [];
-    if (defaultTarget && !targets.includes(defaultTarget)) {
-      targets.push(defaultTarget);
+    const allTargets = cargoToml.package?.metadata?.docs.rs?.targets || [];
+    if (defaultTarget && !allTargets.includes(defaultTarget)) {
+      allTargets.push(defaultTarget);
     }
-    updateInstallTargets(targets);
-    console.log(`Running for targets: [${targets.join(", ")}]`);
+
+    // Determine targets based on OS - only use all targets on Linux
+    const isLinux = Deno.build.os === "linux";
+    const targets = isLinux ? allTargets : [];
+
+    if (isLinux) {
+      updateInstallTargets(targets);
+      console.log(`Running for all targets on Linux: [${targets.join(", ")}]`);
+    } else {
+      console.log(`Running without specific targets on ${Deno.build.os}`);
+    }
     const allCombos = getCombinations(availableFeatures);
 
     // Filter out combos missing any internal dependency
