@@ -10,8 +10,8 @@ repository = "https://github.com/cliftontoaster-reid/wit_owo"
 license = "MIT OR Apache-2.0"
 readme = "README.md"
 keywords = ["wit-ai", "api", "nlp", "nlu"]
-rust-version = "1.85.0"
 exclude = [".github", ".cargo", "tools", ".vscode"]
+rust-version = "1.85.0"
 
 [package.metadata.docs.rs]
 all-features = true
