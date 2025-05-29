@@ -115,6 +115,7 @@ export interface PackageConfig {
   publish?: boolean | string[];
 
   /** Package metadata */
+  // deno-lint-ignore no-explicit-any
   metadata?: Record<string, any>;
 
   /** Default run target */
@@ -156,6 +157,7 @@ export interface WorkspaceConfig {
   package?: Partial<PackageConfig>;
 
   /** Workspace metadata */
+  // deno-lint-ignore no-explicit-any
   metadata?: Record<string, any>;
 }
 
@@ -399,6 +401,7 @@ export interface BadgeConfig {
   service?: string;
 
   /** Additional badge properties */
+  // deno-lint-ignore no-explicit-any
   [key: string]: any;
 }
 

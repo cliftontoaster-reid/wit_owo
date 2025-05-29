@@ -1,8 +1,6 @@
 import { parse } from "jsr:@std/toml";
 import { CargoToml } from "./cargo-toml.d.ts";
 
-let defaultTarget: string | undefined;
-
 /**
  * Run tests for the wit_owo Rust project
  * @param features - Array of feature flags to enable (e.g., ['async', 'blocking'])
