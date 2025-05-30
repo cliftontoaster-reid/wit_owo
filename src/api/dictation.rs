@@ -2,6 +2,8 @@ use crate::error::ApiError;
 use crate::model::dictation::{Dictation, DictationQuery};
 use crate::prelude::WitClient;
 use crate::utils::json::extract_complete_json;
+use crate::{error::WitError, prelude::BASE_URL};
+use url::Url;
 
 #[cfg(feature = "async")]
 use futures::stream::{Stream, StreamExt};
@@ -77,12 +79,11 @@ impl WitClient {
     &self,
     params: DictationQuery,
   ) -> impl Stream<Item = Result<Dictation, ApiError>> {
-    use crate::error::WitError;
     use async_stream::try_stream;
 
     try_stream! {
       let content_type = params.to_string();
-      let url = params.to_url()?;
+      let url = Url::parse(&format!("{BASE_URL}dictation"))?;
 
       let request = self
         .prepare_post_request(url)
@@ -197,7 +198,7 @@ impl WitClient {
     use crate::error::WitError;
 
     let content_type = params.to_string();
-    let url = params.to_url()?;
+    let url = Url::parse(&format!("{BASE_URL}dictation"))?;
 
     let request = self
       .prepare_post_blocking(url)

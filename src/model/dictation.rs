@@ -1,5 +1,4 @@
 use bytes::Bytes;
-
 #[cfg(feature = "async")]
 use futures::stream::Stream;
 #[cfg(feature = "async")]
@@ -91,36 +90,6 @@ impl DictationQuery {
   pub fn with_endian(mut self, endian: bool) -> Self {
     self.endian = Some(endian);
     self
-  }
-
-  /// Generates the URL with query parameters for the dictation request.
-  pub(crate) fn to_url(&self) -> Result<url::Url, crate::error::ApiError> {
-    use crate::prelude::BASE_URL;
-    use url::Url;
-
-    let mut params: Vec<(String, String)> = Vec::new();
-
-    // Add raw encoding parameters as query parameters if present
-    if let Some(raw_encoding) = &self.raw_encoding {
-      params.push(("encoding".to_string(), raw_encoding.clone()));
-    }
-
-    if let Some(bits) = self.bits {
-      params.push(("bits".to_string(), bits.to_string()));
-    }
-
-    if let Some(sample_rate) = self.sample_rate {
-      params.push(("rate".to_string(), sample_rate.to_string()));
-    }
-
-    if let Some(endian) = self.endian {
-      params.push((
-        "endian".to_string(),
-        (if endian { "little" } else { "big" }).to_string(),
-      ));
-    }
-
-    Url::parse_with_params(&format!("{BASE_URL}dictation"), params).map_err(|e| e.into())
   }
 }
 
