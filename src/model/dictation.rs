@@ -10,6 +10,8 @@ use std::fmt::Debug;
 #[cfg(feature = "async")]
 use std::pin::Pin;
 
+use super::entities::DynamicEntity;
+
 /// Represents the encoding format of the audio data.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Encoding {
@@ -48,17 +50,34 @@ pub struct DictationQuery {
   /// Optional endianness of the audio data.
   /// `true` for little-endian, `false` for big-endian.
   pub endian: Option<bool>,
+
+  /// The message text to be processed.
+  pub q: String,
+
+  /// Optional tag to be associated with the message.
+  pub tag: Option<String>,
+
+  /// Optional limit on the number of intents to return.
+  pub n: Option<u8>,
+
+  /// The dynamic entity array to be used in the request.
+  pub dynamic_entities: Option<Vec<DynamicEntity>>,
 }
 
 impl DictationQuery {
   /// Creates a new `DictationQuery` with the specified audio source and encoding.
   ///
-  /// # Parameters
-  /// - `encoding`: The encoding format of the audio data.
-  /// - `data`: The audio source to transcribe, either buffered or streaming.
+  /// # Examples
   ///
-  /// # Returns
-  /// A new `DictationQuery` instance with the specified parameters.
+  /// ```rust
+  /// use wit_owo::model::dictation::{DictationQuery, Encoding, AudioSource};
+  /// use bytes::Bytes;
+  ///
+  /// let data = AudioSource::Buffered(Bytes::from(&b"audio data"[..]));
+  /// let query = DictationQuery::new(Encoding::Wav, data);
+  /// assert_eq!(query.encoding, Encoding::Wav);
+  /// assert!(matches!(query.data, AudioSource::Buffered(_)));
+  /// ```
   pub fn new(encoding: Encoding, data: AudioSource) -> Self {
     Self {
       encoding,
@@ -68,25 +87,70 @@ impl DictationQuery {
   }
 
   /// Sets the raw encoding type for raw audio data.
+  ///
+  /// # Examples
+  ///
+  /// ```rust
+  /// use wit_owo::model::dictation::{DictationQuery, Encoding, AudioSource};
+  /// use bytes::Bytes;
+  ///
+  /// let base = DictationQuery::new(Encoding::Raw, AudioSource::Buffered(Bytes::new()));
+  /// let query = base.with_raw_encoding("pcm".to_string());
+  /// assert_eq!(query.raw_encoding.as_deref(), Some("pcm"));
+  /// ```
   pub fn with_raw_encoding(mut self, raw_encoding: String) -> Self {
     self.raw_encoding = Some(raw_encoding);
     self
   }
 
   /// Sets the bit depth of the audio samples.
+  ///
+  /// # Examples
+  ///
+  /// ```rust
+  /// use wit_owo::model::dictation::{DictationQuery, Encoding, AudioSource};
+  /// use bytes::Bytes;
+  ///
+  /// let query = DictationQuery::new(Encoding::Raw, AudioSource::Buffered(Bytes::new()))
+  ///     .with_bits(16);
+  /// assert_eq!(query.bits, Some(16));
+  /// ```
   pub fn with_bits(mut self, bits: u8) -> Self {
     self.bits = Some(bits);
     self
   }
 
   /// Sets the sample rate in Hertz.
+  ///
+  /// # Examples
+  ///
+  /// ```rust
+  /// use wit_owo::model::dictation::{DictationQuery, Encoding, AudioSource};
+  /// use bytes::Bytes;
+  ///
+  /// let query = DictationQuery::new(Encoding::Raw, AudioSource::Buffered(Bytes::new()))
+  ///     .with_sample_rate(44100);
+  /// assert_eq!(query.sample_rate, Some(44100));
+  /// ```
   pub fn with_sample_rate(mut self, sample_rate: u16) -> Self {
     self.sample_rate = Some(sample_rate);
     self
   }
 
   /// Sets the endianness of the audio data.
+  ///
   /// `true` for little-endian, `false` for big-endian.
+  ///
+  /// # Examples
+  ///
+  /// ```rust
+  /// use wit_owo::model::dictation::{DictationQuery, Encoding, AudioSource};
+  /// use bytes::Bytes;
+  ///
+  /// let query = DictationQuery::new(Encoding::Raw, AudioSource::Buffered(Bytes::new()))
+  ///     .with_endian(true);
+  /// assert_eq!(query.endian, Some(true));
+  /// ```
   pub fn with_endian(mut self, endian: bool) -> Self {
     self.endian = Some(endian);
     self
