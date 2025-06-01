@@ -23,6 +23,7 @@ permissions:
   pull-requests: write # allow PRs
 jobs:
   auto-update:
+    if: ${{ github.event_name != 'pull_request' || github.actor != 'github-actions[bot]' }}
     runs-on: ubuntu-latest
     env:
       BRANCH: update-msrv-${{ github.run_id }}
