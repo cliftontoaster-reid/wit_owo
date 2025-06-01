@@ -10,8 +10,6 @@ use std::fmt::Debug;
 #[cfg(feature = "async")]
 use std::pin::Pin;
 
-use super::entities::DynamicEntity;
-
 /// Represents the encoding format of the audio data.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum Encoding {
@@ -50,18 +48,6 @@ pub struct DictationQuery {
   /// Optional endianness of the audio data.
   /// `true` for little-endian, `false` for big-endian.
   pub endian: Option<bool>,
-
-  /// The message text to be processed.
-  pub q: String,
-
-  /// Optional tag to be associated with the message.
-  pub tag: Option<String>,
-
-  /// Optional limit on the number of intents to return.
-  pub n: Option<u8>,
-
-  /// The dynamic entity array to be used in the request.
-  pub dynamic_entities: Option<Vec<DynamicEntity>>,
 }
 
 impl DictationQuery {
