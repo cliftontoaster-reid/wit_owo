@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.4] - 2025-06-01
+
+### Changed for 1.1.4
+
+- **Dependency Updates**: Refreshed all dependencies to their latest compatible versions
+  - Updated `reqwest` to 0.12.18 for improved HTTP client performance and security
+  - Updated `hyper-util` to 0.1.13 with enhanced HTTP utilities and additional features
+  - Updated `openssl` to 0.10.73 for latest security patches and TLS improvements
+  - Updated `parking_lot` to 0.12.4 for better synchronization primitives
+  - Updated `cc`, `lock_api`, `socket2`, and other transitive dependencies
+- **Build System**: Cargo.lock refreshed to ensure reproducible builds with latest dependency versions
+
+### Technical changes for 1.1.4
+
+- No API changes or breaking modifications in this patch release
+- Maintains full backward compatibility with existing Wit.ai API integrations
+- Improved build times and security posture through dependency updates
+
 ## [1.1.3] - 2025-05-25
 
 ### Added for 1.1.3
