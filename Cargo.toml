@@ -1,6 +1,6 @@
 [package]
 name = "wit_owo"
-version = "1.0.4"
+version = "1.0.5"
 edition = "2024"
 rust-version = "1.85.0"
 authors = ["Clifton Toaster Reid <clifton.toaster.reid@proton.me>"]
@@ -20,11 +20,11 @@ targets = ["x86_64-apple-darwin", "x86_64-pc-windows-msvc"]
 [dependencies]
 async-stream = { version = "0.3.6", optional = true }
 futures = { version = "0.3.31", optional = true }
-tokio = { version = "1.45.0", features = ["full"], optional = true }
+tokio = { version = "1.45.1", features = ["full"], optional = true }
 
 chrono = { version = "0.4.41", features = ["serde"] }
 chrono-tz = { version = "0.10.3", features = ["serde"] }
-reqwest = { version = "0.12.15", features = [
+reqwest = { version = "0.12.19", features = [
   "json",
   "stream",
   "native-tls-alpn",
@@ -42,5 +42,5 @@ async = ["dep:tokio", "dep:async-stream", "dep:futures"]
 blocking = ["reqwest/blocking"]
 
 [dev-dependencies]
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 lipsum = "0.9.1"
