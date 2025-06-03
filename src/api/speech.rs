@@ -40,7 +40,6 @@ impl WitClient {
   /// use futures::stream::StreamExt;
   /// use std::fs::File;
   /// use std::io::Read;
-  /// use wit_owo::model::speech::{SpeechQuery, SpeechResponse};
   ///
   /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
   /// // Initialize the Wit.ai client with your token
@@ -86,6 +85,7 @@ impl WitClient {
   /// # Ok(())
   /// # }
   /// ```
+  #[cfg(feature = "async")]
   pub async fn post_speech(
     &self,
     params: SpeechQuery,
