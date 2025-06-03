@@ -24,8 +24,9 @@ pub struct ReferenceValue {
   pub domain: String,
   /// External IDs (e.g. IMDb, Wikidata).
   #[serde(default)]
-  pub external_ids: HashMap<String, String>,
+  pub external: HashMap<String, String>,
   /// Other metadata.
+  #[serde(default)]
   pub attributes: HashMap<String, String>,
 }
 
@@ -66,6 +67,7 @@ pub struct LocationValue {
 /// Enumerates the supported types of resolved values returned by the system.
 /// Each variant wraps a strongly-typed value struct along with its metadata.
 #[derive(Deserialize, Debug, Clone)]
+#[serde(untagged)]
 pub enum ResolvedValueType {
   /// A resolved external reference (e.g., a book, movie, or person).
   Reference(ReferenceValue),
