@@ -172,6 +172,75 @@ impl WitClient {
 
     }
   }
+
+  #[cfg(feature = "blocking")]
+  pub fn post_blocking_speech(&self, params: SpeechQuery) -> Result<Vec<SpeechResponse>, ApiError> {
+    let content_type = params.to_string();
+    let url = params.to_url()?;
+
+    let request = self
+      .prepare_post_blocking(url)
+      .header("Content-Type", content_type)
+      .body(params.data);
+    println!("Request {request:?}");
+
+    let response = request.send()?;
+    if !response.status().is_success() {
+      return Err(serde_json::from_str::<WitError>(&response.text()?)?)?;
+    }
+
+    let text = response.text()?;
+    let mut results = Vec::new();
+    let mut buffer = text;
+
+    while let Some((json_str, remaining)) = extract_complete_json(&buffer) {
+      // We print the JSON for debugging purposes
+      println!("Received complete JSON: {json_str:?}");
+
+      // Deserialize the complete JSON object
+      let value = serde_json::from_str::<Value>(&json_str)?;
+
+      // Check if the value is an object with a "type" field
+      if let Value::String(type_str) = value.get("type").unwrap() {
+        match type_str.as_str() {
+          "PARTIAL_TRANSCRIPTION" => {
+            // Handle partial transcription
+            let data = SpeechResponse::PartialTranscription(serde_json::from_value::<
+              SpeechTranscription,
+            >(value)?);
+            results.push(data);
+          }
+          "PARTIAL_UNDERSTANDING" => {
+            // Handle understanding
+            let data = SpeechResponse::PartialUnderstanding(serde_json::from_value::<
+              SpeechUnderstanding,
+            >(value)?);
+            results.push(data);
+          }
+          "FINAL_TRANSCRIPTION" => {
+            // Handle final transcription
+            let data = SpeechResponse::FinalTranscription(serde_json::from_value::<
+              SpeechTranscription,
+            >(value)?);
+            results.push(data);
+          }
+          "FINAL_UNDERSTANDING" => {
+            // Handle final understanding
+            let data = SpeechResponse::FinalUnderstanding(serde_json::from_value::<
+              SpeechUnderstanding,
+            >(value)?);
+            results.push(data);
+          }
+          _ => {}
+        }
+      }
+
+      // Update buffer with remaining data
+      buffer = remaining;
+    }
+
+    Ok(results)
+  }
 }
 
 #[cfg(test)]
@@ -322,6 +391,101 @@ mod tests {
     );
   }
 
+  /// Helper function to test blocked speech with buffered audio data
+  #[cfg(feature = "blocking")]
+  fn test_blocking_speech_buffered(encoding: Encoding, audio_data: Vec<u8>, format_name: &str) {
+    dotenv().ok();
+    let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+    let client = WitClient::new(&token);
+
+    let mut params = SpeechQuery::new(encoding, AudioSource::Buffered(Bytes::from(audio_data)));
+
+    params = params.with_n(3); // Limit to 3 intents
+
+    if encoding == Encoding::Raw {
+      // For RAW encoding, we need to specify additional parameters
+      params = params
+        .with_bits(8)
+        .with_sample_rate(8000)
+        .with_endian(true)
+        .with_raw_encoding("unsigned-integer".to_string());
+    }
+
+    let response = client.post_blocking_speech(params);
+    assert!(
+      response.is_ok(),
+      "Failed to get speech response for {format_name} format"
+    );
+
+    let results = response.unwrap();
+    assert!(
+      !results.is_empty(),
+      "Should have received at least one speech response for {format_name} format"
+    );
+
+    for speech_response in results.iter().cloned() {
+      match speech_response {
+        SpeechResponse::PartialTranscription(transcription) => {
+          assert!(
+            !transcription.text.is_empty(),
+            "Partial transcription text should not be empty for {format_name} format"
+          );
+          println!(
+            "{format_name} Partial Transcription: {}",
+            transcription.text
+          );
+        }
+        SpeechResponse::FinalTranscription(transcription) => {
+          assert!(
+            !transcription.text.is_empty(),
+            "Final transcription text should not be empty for {format_name} format"
+          );
+          println!("{format_name} Final Transcription: {}", transcription.text);
+        }
+        SpeechResponse::PartialUnderstanding(understanding) => {
+          assert!(
+            !understanding.text.is_empty(),
+            "Partial understanding text should not be empty for {format_name} format"
+          );
+          println!(
+            "{format_name} Partial Understanding: {}",
+            understanding.text
+          );
+        }
+        SpeechResponse::FinalUnderstanding(understanding) => {
+          assert!(
+            !understanding.text.is_empty(),
+            "Final understanding text should not be empty for {format_name} format"
+          );
+          println!("{format_name} Final Understanding: {}", understanding.text);
+          // Check that intents are limited to max 3 as requested
+          assert!(
+            understanding.intents.len() <= 3,
+            "Should respect n=3 limit on intents for {format_name} format"
+          );
+        }
+      }
+    }
+
+    let last_text = results.last().map(|r| match r {
+      SpeechResponse::PartialTranscription(transcription) => transcription.text.clone(),
+      SpeechResponse::FinalTranscription(transcription) => transcription.text.clone(),
+      SpeechResponse::PartialUnderstanding(understanding) => understanding.text.clone(),
+      SpeechResponse::FinalUnderstanding(understanding) => understanding.text.clone(),
+    });
+
+    assert!(
+      last_text.is_some(),
+      "No speech results were received for {format_name} format"
+    );
+
+    let final_text = last_text.unwrap();
+    assert!(
+      levenshtein_distance(final_text.to_ascii_lowercase().as_str(), EXPECTED_TEXT) < 5,
+      "Last speech text is not similar enough to expected text for {format_name} format"
+    );
+  }
+
   // MP3 Tests
   #[cfg(feature = "async")]
   #[tokio::test]
@@ -414,6 +578,50 @@ mod tests {
     .await;
   }
 
+  // Blocking MP3 Tests
+  #[cfg(feature = "blocking")]
+  #[test]
+  fn test_post_blocking_speech_mp3_buffered() {
+    test_blocking_speech_buffered(
+      Encoding::Mp3,
+      include_bytes!("../../assets/test.mp3").to_vec(),
+      "MP3",
+    );
+  }
+
+  /// Blocking OGG Tests
+  #[cfg(feature = "blocking")]
+  #[test]
+  fn test_post_blocking_speech_ogg_buffered() {
+    test_blocking_speech_buffered(
+      Encoding::Ogg,
+      include_bytes!("../../assets/test.ogg").to_vec(),
+      "OGG",
+    );
+  }
+
+  // Blocking WAV Tests
+  #[cfg(feature = "blocking")]
+  #[test]
+  fn test_post_blocking_speech_wav_buffered() {
+    test_blocking_speech_buffered(
+      Encoding::Wav,
+      include_bytes!("../../assets/test.wav").to_vec(),
+      "WAV",
+    );
+  }
+
+  // Blocking RAW Tests (PCM 8kHz, u8)
+  #[cfg(feature = "blocking")]
+  #[test]
+  fn test_post_blocking_speech_raw_buffered() {
+    test_blocking_speech_buffered(
+      Encoding::Raw, // 8kHz, 8-bit, mono
+      include_bytes!("../../assets/test.raw").to_vec(),
+      "RAW",
+    );
+  }
+
   // Test with context and dynamic entities
   #[cfg(feature = "async")]
   #[tokio::test]
@@ -474,6 +682,76 @@ mod tests {
     );
   }
 
+  /// Test blocking speech with context and dynamic entities
+  #[cfg(feature = "blocking")]
+  #[test]
+  fn test_post_blocking_speech_with_context() {
+    dotenv().ok();
+    let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+    let client = WitClient::new(&token);
+    let params = SpeechQuery::new(
+      Encoding::Wav,
+      AudioSource::Buffered(Bytes::from(
+        include_bytes!("../../assets/test.wav").as_ref(),
+      )),
+    )
+    .with_n(3); // Limit to 3 intents
+
+    let response = client.post_blocking_speech(params);
+    assert!(
+      response.is_ok(),
+      "Failed to get speech response with context: {}",
+      response.unwrap_err()
+    );
+
+    let results = response.unwrap();
+    assert!(
+      !results.is_empty(),
+      "Should have received at least one speech response with context"
+    );
+
+    for speech_response in results.iter().cloned() {
+      match speech_response {
+        SpeechResponse::PartialTranscription(transcription) => {
+          assert!(
+            !transcription.text.is_empty(),
+            "Partial transcription text should not be empty"
+          );
+          println!("Partial Transcription with context: {}", transcription.text);
+        }
+        SpeechResponse::FinalTranscription(transcription) => {
+          assert!(
+            !transcription.text.is_empty(),
+            "Final transcription text should not be empty"
+          );
+          println!("Final Transcription with context: {}", transcription.text);
+        }
+        SpeechResponse::PartialUnderstanding(understanding) => {
+          assert!(
+            !understanding.text.is_empty(),
+            "Partial understanding text should not be empty"
+          );
+          println!("Partial Understanding with context: {}", understanding.text);
+        }
+        SpeechResponse::FinalUnderstanding(understanding) => {
+          assert!(
+            !understanding.text.is_empty(),
+            "Final understanding text should not be empty"
+          );
+          println!("Final Understanding with context: {}", understanding.text);
+          // Check that intents are limited to max 3 as requested
+          assert!(
+            understanding.intents.len() <= 3,
+            "Should respect n=3 limit on intents"
+          );
+        }
+        _ => {
+          panic!("Unexpected speech response type with context: {speech_response:?}");
+        }
+      }
+    }
+  }
+
   // Test speech response types
   #[cfg(feature = "async")]
   #[tokio::test]
@@ -496,14 +774,15 @@ mod tests {
     while let Some(result) = stream.next().await {
       match result {
         Ok(speech_response) => match speech_response {
-          SpeechResponse::PartialTranscription(_) | SpeechResponse::FinalTranscription(_) => {
+          SpeechResponse::FinalTranscription(_) => {
             transcription_received = true;
             println!("Received transcription response");
           }
-          SpeechResponse::PartialUnderstanding(_) | SpeechResponse::FinalUnderstanding(_) => {
+          SpeechResponse::FinalUnderstanding(_) => {
             understanding_received = true;
             println!("Received understanding response");
           }
+          _ => {}
         },
         Err(e) => {
           panic!("Speech response types test failed: {e:?}");
@@ -519,5 +798,55 @@ mod tests {
 
     println!("Transcription received: {transcription_received}");
     println!("Understanding received: {understanding_received}");
+  }
+
+  #[cfg(feature = "blocking")]
+  #[test]
+  fn test_blocking_speech_response_types() {
+    dotenv().ok();
+    let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+    let client = WitClient::new(&token);
+
+    let params = SpeechQuery::new(
+      Encoding::Wav,
+      AudioSource::Buffered(Bytes::from(
+        include_bytes!("../../assets/test.wav").as_ref(),
+      )),
+    );
+
+    let response = client.post_blocking_speech(params);
+    assert!(
+      response.is_ok(),
+      "Failed to get speech response: {}",
+      response.unwrap_err()
+    );
+
+    let results = response.unwrap();
+    let mut transcription_received = false;
+    let mut understanding_received = false;
+
+    for speech_response in results {
+      match speech_response {
+        SpeechResponse::FinalTranscription(_) => {
+          transcription_received = true;
+          println!("Received transcription response");
+        }
+        SpeechResponse::FinalUnderstanding(_) => {
+          understanding_received = true;
+          println!("Received understanding response");
+        }
+        _ => {}
+      }
+    }
+
+    // We should receive at least transcription responses
+    assert!(
+      transcription_received,
+      "Should have received at least one transcription response"
+    );
+    assert!(
+      understanding_received,
+      "Should have received at least one understanding response"
+    );
   }
 }
