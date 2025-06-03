@@ -174,6 +174,87 @@ impl WitClient {
     }
   }
 
+  /// Performs speech-to-text with natural language understanding using the Wit.ai API (blocking version).
+  ///
+  /// This method sends audio data to the Wit.ai speech endpoint and returns all
+  /// transcription and understanding results at once. Unlike the streaming version,
+  /// this method blocks until all processing is complete and returns a vector containing
+  /// all partial and final results. Unlike the dictation endpoint which only provides
+  /// transcription, the speech endpoint also provides intent and entity recognition.
+  ///
+  /// # Arguments
+  ///
+  /// * `params` - A `SpeechQuery` containing the audio encoding format, audio data,
+  ///   and optional parameters like context, dynamic entities, and intent limits
+  ///
+  /// # Returns
+  ///
+  /// Returns a `Vec<SpeechResponse>` containing all transcription and understanding results.
+  /// Each item contains either a transcription result or an understanding result (with
+  /// intents/entities), which may be partial (interim) or final depending on the response
+  /// from the API.
+  ///
+  /// # Errors
+  ///
+  /// This method will return an error if:
+  /// * The URL parsing fails
+  /// * The HTTP request fails to send
+  /// * The API returns a non-success status code
+  /// * JSON deserialization of the response fails
+  ///
+  /// # Feature Requirements
+  ///
+  /// This method is only available when the `blocking` feature is enabled.
+  ///
+  /// # Example
+  ///
+  /// ```no_run
+  /// use wit_owo::prelude::*;
+  /// use bytes::Bytes;
+  /// use std::fs::File;
+  /// use std::io::Read;
+  ///
+  /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+  /// // Initialize the Wit.ai client with your token
+  /// let client = WitClient::new("your_token_here");
+  ///
+  /// // Load audio data from a file (WAV format in this example)
+  /// let mut file = File::open("path/to/audio.wav")?;
+  /// let mut audio_bytes = Vec::new();
+  /// file.read_to_end(&mut audio_bytes)?;
+  /// let audio_data = Bytes::from(audio_bytes);
+  ///
+  /// // Create a speech query with the appropriate encoding
+  /// let params = SpeechQuery::new(
+  ///     Encoding::Wav,
+  ///     AudioSource::Buffered(audio_data)
+  /// );
+  ///
+  /// // Send the audio data to Wit.ai and get all results at once
+  /// let results = client.post_blocking_speech(params)?;
+  ///
+  /// // Process all speech results
+  /// for speech_response in results {
+  ///     match speech_response {
+  ///         SpeechResponse::FinalTranscription(transcription) => {
+  ///             println!("Final Transcription: {}", transcription.text);
+  ///         },
+  ///         SpeechResponse::FinalUnderstanding(understanding) => {
+  ///             println!("Final Understanding: {}", understanding.text);
+  ///             println!("Intents: {:?}", understanding.intents);
+  ///             println!("Entities: {:?}", understanding.entities);
+  ///         },
+  ///         SpeechResponse::PartialTranscription(transcription) => {
+  ///             println!("Partial Transcription: {}", transcription.text);
+  ///         },
+  ///         SpeechResponse::PartialUnderstanding(understanding) => {
+  ///             println!("Partial Understanding: {}", understanding.text);
+  ///         }
+  ///     }
+  /// }
+  /// # Ok(())
+  /// # }
+  /// ```
   #[cfg(feature = "blocking")]
   pub fn post_blocking_speech(&self, params: SpeechQuery) -> Result<Vec<SpeechResponse>, ApiError> {
     let content_type = params.to_string();
