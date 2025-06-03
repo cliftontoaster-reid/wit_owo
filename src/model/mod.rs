@@ -19,3 +19,6 @@ pub mod context;
 
 /// This module contains the structures related to the dictation returned by the Wit.ai API.
 pub mod dictation;
+
+/// This module contains the structures related to the speech returned by the Wit.ai API.
+pub mod speech;
