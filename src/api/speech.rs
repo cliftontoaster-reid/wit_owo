@@ -101,7 +101,6 @@ impl WitClient {
         .prepare_post_request(url)
         .header("Content-Type", content_type)
         .body(params.data);
-      println!("Request {request:?}");
 
       let response = request.send().await?;
 
@@ -127,9 +126,6 @@ impl WitClient {
 
         // Process complete JSON objects from the buffer
         while let Some((json_str, remaining)) = extract_complete_json(&buffer) {
-          // We print the JSON for debugging purposes
-          println!("Received complete JSON: {json_str:?}");
-
           // Deserialize the complete JSON object
           let value = serde_json::from_str::<Value>(&json_str)?;
 
@@ -264,7 +260,6 @@ impl WitClient {
       .prepare_post_blocking(url)
       .header("Content-Type", content_type)
       .body(params.data);
-    println!("Request {request:?}");
 
     let response = request.send()?;
     if !response.status().is_success() {
@@ -276,9 +271,6 @@ impl WitClient {
     let mut buffer = text;
 
     while let Some((json_str, remaining)) = extract_complete_json(&buffer) {
-      // We print the JSON for debugging purposes
-      println!("Received complete JSON: {json_str:?}");
-
       // Deserialize the complete JSON object
       let value = serde_json::from_str::<Value>(&json_str)?;
 
@@ -726,7 +718,6 @@ mod tests {
     while let Some(result) = stream.next().await {
       match result {
         Ok(speech_response) => {
-          println!("Speech Response with context: {speech_response:?}");
           received_results = true;
 
           // Verify response structure based on type
@@ -826,9 +817,6 @@ mod tests {
             understanding.intents.len() <= 3,
             "Should respect n=3 limit on intents"
           );
-        }
-        _ => {
-          panic!("Unexpected speech response type with context: {speech_response:?}");
         }
       }
     }
