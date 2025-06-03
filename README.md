@@ -55,7 +55,7 @@ wit_owo = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 - ❌ POST `/event`
 
-- ❌ POST `/speech`
+- ⚠️ POST `/speech`
 
 - ✔️ GET `/message`
 
