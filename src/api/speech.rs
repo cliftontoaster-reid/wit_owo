@@ -2,6 +2,7 @@ use crate::error::{ApiError, WitError};
 use crate::model::speech::{SpeechQuery, SpeechResponse, SpeechTranscription, SpeechUnderstanding};
 use crate::prelude::WitClient;
 use crate::utils::json::extract_complete_json;
+#[cfg(feature = "async")]
 use futures::{Stream, StreamExt as _};
 use serde_json::Value;
 
