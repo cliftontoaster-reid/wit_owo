@@ -19,11 +19,14 @@
 //!
 //! ```no_run
 //! use wit_owo::model::client::WitClient;
+//! # use std::env;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
+//!     # dotenvy::dotenv().ok();
+//!     # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
 //!     // Initialize the client with your Wit.ai API token
-//!     let client = WitClient::new("YOUR_WIT_AI_TOKEN");
+//!     let client = WitClient::new(&token);
 //!
 //!     // Send a simple message for processing
 //!     let response = client.get_message("Book a flight to Paris tomorrow").await?;
@@ -36,6 +39,8 @@
 //!
 //!     Ok(())
 //! }
+//!
+//! # main().unwrap();
 //! ```
 //!
 //! ### Using MessageQuery for Advanced Options
@@ -44,10 +49,13 @@
 //!
 //! ```no_run
 //! use wit_owo::model::{client::WitClient, message::MessageQuery};
+//! # use std::env;
 //!
 //! #[tokio::main]
 //! async fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let client = WitClient::new("YOUR_WIT_AI_TOKEN");
+//!     # dotenvy::dotenv().ok();
+//!     # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//!     let client = WitClient::new(&token);
 //!
 //!     // Create a detailed query with additional parameters
 //!     let query = MessageQuery::new("What's the weather like?".to_string())
@@ -59,6 +67,8 @@
 //!     // Process the response...
 //!     Ok(())
 //! }
+//!
+//! # main().unwrap();
 //! ```
 //!
 //! ### Synchronous API (blocking feature)
@@ -72,10 +82,13 @@
 //!
 //! ```no_run
 //! use wit_owo::model::client::WitClient;
+//! # use std::env;
 //!
 //! # #[cfg(feature = "blocking")]
 //! fn main() -> Result<(), Box<dyn std::error::Error>> {
-//!     let client = WitClient::new("YOUR_WIT_AI_TOKEN");
+//!     # dotenvy::dotenv().ok();
+//!     # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//!     let client = WitClient::new(&token);
 //!
 //!     // Blocking call - no async/await needed
 //!     let response = client.get_message_blocking("Turn on the lights")?;
@@ -84,6 +97,8 @@
 //!     Ok(())
 //! }
 //!
+//! # #[cfg(feature = "blocking")]
+//! # main().unwrap();
 //! # #[cfg(not(feature = "blocking"))]
 //! # fn main() {
 //! #     println!("Please enable the 'blocking' feature to use synchronous API calls.");
@@ -130,6 +145,11 @@
 //!
 //!     Ok(())
 //! }
+//!
+//! # tokio::runtime::Runtime::new().unwrap().block_on(async {
+//! #     let client = WitClient::new("test_token");
+//! #     let _ = process_message(&client, "test message").await;
+//! # });
 //! ```
 //!
 //! ## Advanced Features
@@ -144,9 +164,12 @@
 //!     message::MessageQuery,
 //!     entities::{DynamicEntity, EntityValue},
 //! };
+//! # use std::env;
 //!
 //! async fn use_dynamic_entities() -> Result<(), Box<dyn std::error::Error>> {
-//!     let client = WitClient::new("YOUR_WIT_AI_TOKEN");
+//!     # dotenvy::dotenv().ok();
+//!     # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//!     let client = WitClient::new(&token);
 //!
 //!     // Define dynamic entities for this specific request
 //!     let mut contact_entity = DynamicEntity::new("contact".to_string());
@@ -179,6 +202,8 @@
 //!
 //!     Ok(())
 //! }
+//!
+//! # tokio::runtime::Runtime::new().unwrap().block_on(use_dynamic_entities()).unwrap();
 //! ```
 //!
 //! ### Error Handling
@@ -187,8 +212,11 @@
 //!
 //! ```no_run
 //! use wit_owo::{model::client::WitClient, error::ApiError};
+//! # use std::env;
 //!
 //! async fn handle_errors() {
+//!     # dotenvy::dotenv().ok();
+//!     # let _token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
 //!     let client = WitClient::new("INVALID_TOKEN");
 //!
 //!     match client.get_message("test message").await {
@@ -210,6 +238,8 @@
 //!         }
 //!     }
 //! }
+//!
+//! # tokio::runtime::Runtime::new().unwrap().block_on(handle_errors());
 //! ```
 //!
 //! ## Best Practices
@@ -221,9 +251,11 @@
 //! use std::env;
 //! use wit_owo::model::client::WitClient;
 //!
-//! let token = env::var("WIT_AI_TOKEN")
-//!     .expect("WIT_AI_TOKEN environment variable not set");
+//! # dotenvy::dotenv().ok();
+//! let token = env::var("WIT_API_TOKEN")
+//!     .expect("WIT_API_TOKEN environment variable not set");
 //! let client = WitClient::new(&token);
+//! # let _ = client; // Suppress unused variable warning
 //! ```
 //!
 //! ### 2. **Message Length Limits**
@@ -263,11 +295,14 @@
 //! ```no_run
 //! use futures::future::join_all;
 //! use wit_owo::model::{client::WitClient, message::Message};
+//! # use std::env;
 //!
 //! async fn process_multiple_messages(
 //!     client: &WitClient,
 //!     messages: Vec<&str>
 //! ) -> Result<Vec<Message>, Box<dyn std::error::Error>> {
+//!     # dotenvy::dotenv().ok();
+//!     # let _token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
 //!     let futures = messages.into_iter()
 //!         .map(|msg| client.get_message(msg));
 //!
@@ -276,6 +311,12 @@
 //!     results.into_iter().collect::<Result<Vec<_>, _>>()
 //!         .map_err(|e| e.into())
 //! }
+//!
+//! # tokio::runtime::Runtime::new().unwrap().block_on(async {
+//! #     let client = WitClient::new("test_token");
+//! #     let messages = vec!["hello", "world"];
+//! #     let _ = process_multiple_messages(&client, messages).await;
+//! # });
 //! ```
 //!
 //! ## Feature Flags

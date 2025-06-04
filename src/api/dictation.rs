@@ -35,9 +35,14 @@
 //!
 //! ```rust
 //! use wit_owo::prelude::*;
+//! # use dotenvy::dotenv;
+//! # use std::env;
 //!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
 //! // Initialize the client with your Wit.ai token
-//! let client = WitClient::new("your_wit_ai_token_here");
+//! let client = WitClient::new(&token);
+//! # let _ = client; // Hide the actual usage
 //! ```
 //!
 //! ## Quick Start Examples
@@ -51,9 +56,13 @@
 //! use std::fs::File;
 //! use std::io::Read;
 //! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
 //!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
 //! // Initialize client
-//! let client = WitClient::new("your_token_here");
+//! let client = WitClient::new(&token);
 //!
 //! // Read audio file
 //! let mut file = File::open("audio.wav")?;
@@ -76,6 +85,8 @@
 //! }
 //! # Ok(())
 //! # }
+//! # #[cfg(feature = "blocking")]
+//! # fn main() { let _ = example(); }
 //! ```
 //!
 //! ### Example 2: Streaming Transcription (Async)
@@ -86,8 +97,12 @@
 //! use wit_owo::prelude::*;
 //! use futures::stream::StreamExt;
 //! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
 //!
-//! let client = WitClient::new("your_token_here");
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! let client = WitClient::new(&token);
 //!
 //! // Load audio data
 //! let audio_data = std::fs::read("audio.wav")?;
@@ -116,6 +131,9 @@
 //! }
 //! # Ok(())
 //! # }
+//! # #[cfg(feature = "async")]
+//! # #[tokio::main]
+//! # async fn main() { let _ = example().await; }
 //! ```
 //!
 //! ### Example 3: Real-time Audio Stream Processing
@@ -126,8 +144,12 @@
 //! use wit_owo::prelude::*;
 //! use futures::stream::{self, StreamExt};
 //! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
 //!
-//! let client = WitClient::new("your_token_here");
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! let client = WitClient::new(&token);
 //!
 //! // Create a stream of audio chunks (e.g., from microphone)
 //! let audio_data = std::fs::read("audio.wav")?;
@@ -155,6 +177,9 @@
 //! }
 //! # Ok(())
 //! # }
+//! # #[cfg(feature = "async")]
+//! # #[tokio::main]
+//! # async fn main() { let _ = example().await; }
 //! ```
 //!
 //! ### Example 4: Raw Audio Processing
@@ -166,8 +191,12 @@
 //! # fn example() -> Result<(), Box<dyn std::error::Error>> {
 //! use wit_owo::prelude::*;
 //! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
 //!
-//! let client = WitClient::new("your_token_here");
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! let client = WitClient::new(&token);
 //!
 //! // Raw audio data (8kHz, 8-bit, mono, unsigned-integer)
 //! let raw_audio = std::fs::read("audio.raw")?;
@@ -188,6 +217,8 @@
 //! }
 //! # Ok(())
 //! # }
+//! # #[cfg(feature = "blocking")]
+//! # fn main() { let _ = example(); }
 //! ```
 //!
 //! ## Audio Format Guidelines
@@ -228,7 +259,9 @@
 //!     .with_bits(16)                                    // 8, 16, 24, or 32
 //!     .with_sample_rate(16000)                         // Hz
 //!     .with_endian(true);                              // true=little, false=big
+//! # let _ = query; // Hide the actual usage
 //! # }
+//! # fn main() { example(); }
 //! ```
 //!
 //! ## Understanding Transcription Results
@@ -278,13 +311,17 @@
 //!
 //! ### Common Error Scenarios
 //!
-//! ```rust
+//! ```rust,should_panic
 //! # #[cfg(feature = "blocking")]
 //! # async fn example() {
 //! use wit_owo::prelude::*;
+//! # use dotenvy::dotenv;
+//! # use std::env;
 //! # let audio_source = AudioSource::Buffered(bytes::Bytes::new());
 //!
-//! let client = WitClient::new("your_token_here");
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! let client = WitClient::new(&token);
 //! let query = DictationQuery::new(Encoding::Wav, audio_source);
 //!
 //! match client.post_blocking_dictation(query) {
@@ -311,6 +348,9 @@
 //!     }
 //! }
 //! # }
+//! # #[cfg(feature = "blocking")]
+//! # #[tokio::main]
+//! # async fn main() { example().await; }
 //! ```
 //!
 //! ## Performance Tips
@@ -340,7 +380,13 @@
 //!     Encoding::Wav,
 //!     audio_stream  // Uses less memory
 //! );
+//! # let _ = query; // Hide the actual usage
 //! # Ok(())
+//! # }
+//! # #[cfg(feature = "async")]
+//! # fn main() {
+//! #     let rt = tokio::runtime::Runtime::new().unwrap();
+//! #     let _ = rt.block_on(example());
 //! # }
 //! ```
 //!
@@ -416,8 +462,11 @@
 //!     audio_chunks.into_iter().map(|chunk| Ok(Bytes::from(chunk)))
 //! );
 //! let audio_source = AudioSource::Stream(Box::pin(custom_stream));
+//! # drop(audio_source); // Hide the actual usage
 //! # }
+//! # drop(audio_source); // Hide the actual usage
 //! # }
+//! # fn main() { example(); }
 //! ```
 //!
 //! ### Integrating with Audio Libraries
@@ -474,10 +523,14 @@ impl WitClient {
   /// use futures::stream::StreamExt;
   /// use std::fs::File;
   /// use std::io::Read;
+  /// # use dotenvy::dotenv;
+  /// # use std::env;
   ///
   /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+  /// # dotenv().ok();
+  /// # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
   /// // Initialize the Wit.ai client with your token
-  /// let client = WitClient::new("your_token_here");
+  /// let client = WitClient::new(&token);
   ///
   /// // Load audio data from a file (WAV format in this example)
   /// let mut file = File::open("path/to/audio.wav")?;
@@ -507,6 +560,9 @@ impl WitClient {
   /// }
   /// # Ok(())
   /// # }
+  /// # #[cfg(feature = "async")]
+  /// # #[tokio::main]
+  /// # async fn main() { let _ = example().await; }
   /// ```
   #[cfg(feature = "async")]
   pub async fn post_dictation(
@@ -595,10 +651,14 @@ impl WitClient {
   /// use bytes::Bytes;
   /// use std::fs::File;
   /// use std::io::Read;
+  /// # use dotenvy::dotenv;
+  /// # use std::env;
   ///
   /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+  /// # dotenv().ok();
+  /// # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
   /// // Initialize the Wit.ai client with your token
-  /// let client = WitClient::new("your_token_here");
+  /// let client = WitClient::new(&token);
   ///
   /// // Load audio data from a file (WAV format in this example)
   /// let mut file = File::open("path/to/audio.wav")?;
@@ -623,6 +683,8 @@ impl WitClient {
   /// }
   /// # Ok(())
   /// # }
+  /// # #[cfg(feature = "blocking")]
+  /// # fn main() { let _ = example(); }
   /// ```
   #[cfg(feature = "blocking")]
   pub fn post_blocking_dictation(
