@@ -64,6 +64,26 @@ wit_owo = { version = "1.1.5", features = ["async", "blocking"] }
 
 This allows you to use both synchronous and asynchronous APIs in the same application, choosing the most appropriate one for each use case.
 
+## Documentation & Tutorials
+
+📚 **Comprehensive tutorials and examples are available on [docs.rs](https://docs.rs/wit_owo)**
+
+The documentation includes detailed tutorials for all major functionality:
+
+- **Message API Tutorial**: Step-by-step guides for natural language understanding, intent recognition, entity extraction, and dynamic entities
+- **Dictation API Tutorial**: Complete examples for speech-to-text transcription, audio format handling, streaming, and batch processing
+- **Speech API Tutorial**: Instructions for text-to-speech synthesis, voice configuration, and audio generation
+
+Each tutorial includes:
+
+- ✨ **Quick start examples** for immediate usage
+- 🔧 **Advanced configuration** options and best practices
+- 📖 **Real-world use cases** and practical applications
+- ⚡ **Both async and blocking** code examples
+- 🛡️ **Error handling** patterns and troubleshooting
+
+Start with the [API module documentation](https://docs.rs/wit_owo/latest/wit_owo/api/) for an overview of all available tutorials.
+
 ## Legal Notice
 
 This project is licensed under both the MIT and Apache 2.0 licences. You can find the full text of the licences in the [`LICENSE-MIT`](./LICENCE-MIT) and [`LICENSE-APACHE`](./LICENCE-APACHE) files respectively. You are therefore allowed to use this project in any way you see fit, as long as you respect the terms of the licenses you decide to align with.
