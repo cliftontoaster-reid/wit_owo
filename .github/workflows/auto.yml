@@ -43,8 +43,8 @@ jobs:
         with:
           path: |
             target
-            ~/.cargo/registry
-            ~/.cargo/git
+            ${{ runner.os == 'Windows' && '~\\.cargo\\registry' || '~/.cargo/registry' }}
+            ${{ runner.os == 'Windows' && '~\\.cargo\\git' || '~/.cargo/git' }}
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
             ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -60,6 +60,7 @@ jobs:
 
       - name: Updating minimum supported Rust version
         id: msrv-detection
+        shell: bash
         run: |
           set -o pipefail
 
@@ -72,6 +73,7 @@ jobs:
 
       - name: Output MSRV for collection
         id: msrv-output
+        shell: bash
         run: |
           echo "msrv=${{ steps.msrv-detection.outputs.msrv }}" >> $GITHUB_OUTPUT
 
@@ -98,6 +100,7 @@ jobs:
 
       - name: Collect and compare MSRV versions
         id: compare-msrv
+        shell: bash
         run: |
           # Extract MSRV values from the matrix jobs
           # Note: GitHub Actions doesn't directly support collecting outputs from matrix jobs
@@ -112,12 +115,14 @@ jobs:
           echo "highest_msrv=$DETECTED_MSRV" >> $GITHUB_OUTPUT
 
       - name: Set final MSRV
+        shell: bash
         run: |
           HIGHEST_MSRV="${{ steps.compare-msrv.outputs.highest_msrv }}"
           echo "📌 Setting MSRV to: $HIGHEST_MSRV"
           cargo msrv set "$HIGHEST_MSRV"
 
       - name: Verify MSRV is correctly set
+        shell: bash
         run: |
           # Verify the MSRV was set correctly by checking Cargo.toml
           if grep -q "rust-version" Cargo.toml; then
@@ -138,6 +143,7 @@ jobs:
 
       - name: Commit MSRV changes if needed
         if: github.event_name == 'push'
+        shell: bash
         run: |
           git config --local user.email "clifton.toaster.reid@proton.me"
           git config --local user.name "UwUpdate[bot]"
