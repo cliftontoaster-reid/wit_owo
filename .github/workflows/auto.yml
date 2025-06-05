@@ -80,7 +80,7 @@ jobs:
           echo "msrv=${{ steps.msrv-detection.outputs.msrv }}" >> $GITHUB_OUTPUT
 
       - name: Check for breaking changes
-        run: deno run --allow-all tools/publish.ts
+        run: deno run --allow-all tools/publish.ts --clippy
 
   validate-msrv:
     name: Validate MSRV
