@@ -141,6 +141,9 @@ jobs:
             exit 1
           fi
 
+      - name: Apply update
+        run: cargo update
+
       - name: Commit MSRV changes if needed
         if: github.event_name == 'push'
         shell: bash
@@ -151,7 +154,7 @@ jobs:
           if git diff --quiet; then
             echo "📋 No MSRV changes to commit"
           else
-            git add Cargo.toml
+            git add Cargo.toml Cargo.lock
             git commit -m "chore: update MSRV to ${{ steps.compare-msrv.outputs.highest_msrv }}"
             git push
             echo "✅ MSRV changes committed and pushed"
