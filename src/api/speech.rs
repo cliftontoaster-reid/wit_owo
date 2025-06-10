@@ -1,3 +1,395 @@
+//! # Wit.ai Speech API
+//!
+//! This module provides a comprehensive interface for performing speech-to-text transcription
+//! and natural language understanding (intent and entity recognition) using the Wit.ai Speech API.
+//! Unlike the dictation endpoint which only provides transcription results, the Speech API
+//! returns rich understanding data (intents and entities) along with interim and final
+//! transcription outputs. Both asynchronous streaming and blocking batch modes are supported.
+//!
+//! ## Overview
+//!
+//! - **Streaming (Async)**: Real-time processing of audio streams with partial and final updates
+//! - **Blocking (Sync)**: Send a complete audio payload and receive all results at once
+//! - **Natural Language Understanding**: Automatic intent and entity extraction
+//! - **Multiple Formats**: WAV, MP3, OGG, μ-law, and raw PCM
+//!
+//! ## Supported Audio Formats
+//!
+//! | Format | Description                      | Content-Type                |
+//! |--------|----------------------------------|-----------------------------|
+//! | WAV    | Waveform Audio File Format       | `audio/wav`                 |
+//! | MP3    | MPEG Audio Layer III             | `audio/mpeg3`               |
+//! | OGG    | Ogg Vorbis audio format          | `audio/ogg`                 |
+//! | μ-law  | µ-law algorithm (telephony)      | `audio/ulaw`                |
+//! | Raw    | Raw PCM audio data               | `audio/raw; encoding=...`   |
+//!
+//! ## Getting Started
+//!
+//! 1. **Create a Wit.ai App**: Sign up at [wit.ai](https://wit.ai) and create an application.
+//! 2. **Obtain API Token**: Copy the server access token from your app settings.
+//! 3. **Enable Features**: In `Cargo.toml`, enable `async` and/or `blocking` under `features`.
+//! 4. **Prepare Audio**: Collect or record audio files or streams in a supported format.
+//!
+//! ### Basic Client Initialization
+//!
+//! ```rust
+//! use wit_owo::prelude::*;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! // Initialize the Wit.ai client
+//! let client = WitClient::new(&token);
+//! ```
+//!
+//! ## Quick Start Examples
+//!
+//! ### 1. Asynchronous Streaming Mode
+//!
+//! Receive partial and final transcription and understanding results as they arrive:
+//!
+//! ```rust
+//! # #[cfg(feature = "async")]
+//! # async fn speech_stream_example() -> Result<(), Box<dyn std::error::Error>> {
+//! use wit_owo::prelude::*;
+//! use futures::StreamExt;
+//! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").unwrap();
+//! let client = WitClient::new(&token);
+//!
+//! // Load or stream audio data
+//! let data = std::fs::read("assets/test.wav").unwrap_or_else(|_| vec![0u8; 1024]);
+//! let query = SpeechQuery::new(Encoding::Wav, AudioSource::Buffered(Bytes::from(data)));
+//!
+//! // Start the streaming call
+//! let mut stream = Box::pin(client.post_speech(query).await);
+//!
+//! while let Some(item) = stream.next().await {
+//!     match item? {
+//!         SpeechResponse::PartialTranscription(p) => println!("Interim: {}", p.text),
+//!         SpeechResponse::FinalTranscription(f)   => println!("Final Transcript: {}", f.text),
+//!         SpeechResponse::PartialUnderstanding(u) => println!("Interim NLU: {}", u.text),
+//!         SpeechResponse::FinalUnderstanding(u)   => {
+//!             println!("Final NLU: {}", u.text);
+//!             println!("Intents: {:?}", u.intents);
+//!             println!("Entities: {:?}", u.entities);
+//!         }
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "async")]
+//! # #[tokio::main]
+//! # async fn main() { let _ = speech_stream_example().await; }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() { }
+//! ```
+//!
+//! ### 2. Blocking Batch Mode
+//!
+//! Send a complete audio file and receive all results after processing:
+//!
+//! ```rust
+//! # #[cfg(feature = "blocking")]
+//! # fn speech_blocking_example() -> Result<(), Box<dyn std::error::Error>> {
+//! use wit_owo::prelude::*;
+//! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").unwrap();
+//! let client = WitClient::new(&token);
+//!
+//! // Read audio file into memory
+//! let data = std::fs::read("assets/test.mp3").unwrap_or_else(|_| vec![0u8; 1024]);
+//! let query = SpeechQuery::new(Encoding::Mp3, AudioSource::Buffered(Bytes::from(data)))
+//!     .with_n(3); // limit to top 3 intents
+//!
+//! // Execute blocking call
+//! let results = client.post_blocking_speech(query)?;
+//!
+//! for res in results {
+//!     match res {
+//!         SpeechResponse::FinalTranscription(t) => println!("Transcript: {}", t.text),
+//!         SpeechResponse::FinalUnderstanding(u) => println!("NLU: {:?}", u.intents),
+//!         _ => {}
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "blocking")]
+//! # fn main() { let _ = speech_blocking_example(); }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() { }
+//! ```
+//!
+//! ### 3. Raw PCM Audio
+//!
+//! When sending raw PCM, specify bit depth, sample rate, endian, and encoding:
+//!
+//! ```rust
+//! # #[cfg(feature = "async")]
+//! # async fn raw_audio_example() -> Result<(), Box<dyn std::error::Error>> {
+//! use wit_owo::prelude::*;
+//! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//! use futures::StreamExt;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").unwrap();
+//! let client = WitClient::new(&token);
+//! let mut query = SpeechQuery::new(
+//!     Encoding::Raw,
+//!     AudioSource::Buffered(Bytes::from(std::fs::read("assets/test.raw").unwrap_or_else(|_| vec![0u8; 1024])))
+//! )
+//! .with_bits(16)
+//! .with_sample_rate(16000)
+//! .with_endian(true)
+//! .with_raw_encoding("signed-integer".to_string());
+//!
+//! let mut stream = Box::pin(client.post_speech(query).await);
+//! while let Some(item) = stream.next().await {
+//!     println!("Raw PCM output: {:?}", item?);
+//! }
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "async")]
+//! # #[tokio::main]
+//! # async fn main() { let _ = raw_audio_example().await; }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() { }
+//! ```
+//!
+//! ## Audio Format Guidelines
+//!
+//! ### Recommended Settings
+//!
+//! To achieve optimal transcription and NLU performance:
+//!
+//! - **Sample Rate**: 16 kHz or higher (8 kHz minimum)
+//! - **Bit Depth**: 16-bit or higher
+//! - **Channels**: Mono preferred, stereo supported
+//! - **Format**: WAV or FLAC for highest fidelity, MP3/OGG for smaller file size
+//!
+//! ### Format-Specific Notes
+//!
+//! **WAV**:
+//! - Uncompressed PCM audio
+//! - Supports various bit depths
+//! - No compression artifacts
+//!
+//! **MP3**:
+//! - Good compression-to-quality tradeoff
+//! - Widely supported
+//! - Minor artifacts possible
+//!
+//! **OGG**:
+//! - Open container with Vorbis or Opus codecs
+//! - Efficient streaming support
+//!
+//! **μ-law**:
+//! - Telephony standard
+//! - 8 kHz sampling
+//!
+//! **Raw PCM**:
+//! - Requires manual specification of encoding parameters
+//! - Highest flexibility for custom audio
+//!
+//! ### Raw PCM Configuration
+//!
+//! ```rust
+//! use wit_owo::prelude::*;
+//! use bytes::Bytes;
+//! use std::collections::HashMap;
+//! // Example: 16-bit signed PCM, 16 kHz, little-endian
+//! # || -> Result<(), Box<dyn std::error::Error>> {
+//! let mut query = SpeechQuery::new(
+//!     Encoding::Raw,
+//!     AudioSource::Buffered(Bytes::from(std::fs::read("assets/test.raw").unwrap_or_else(|_| vec![0u8; 1024])))
+//! )
+//! .with_bits(16)                // bit depth
+//! .with_sample_rate(16000)      // sample rate (Hz)
+//! .with_endian(true)            // true = little-endian
+//! .with_raw_encoding("signed-integer".to_string());
+//! # Ok(())
+//! # };
+//! ```
+//!
+//! ## Understanding SpeechResponse
+//!
+//! The `SpeechResponse` enum encapsulates both transcription and NLU output:
+//!
+//! ```rust
+//! use wit_owo::prelude::*;
+//! use std::collections::HashMap;
+//! pub enum SpeechResponse {
+//!     PartialTranscription(SpeechTranscription),
+//!     FinalTranscription(SpeechTranscription),
+//!     PartialUnderstanding(SpeechUnderstanding),
+//!     FinalUnderstanding(SpeechUnderstanding),
+//! }
+//!
+//! pub struct SpeechTranscription {
+//!     pub text: String,      // Transcribed text
+//!     pub confidence: f32,   // Confidence score (0.0-1.0)
+//! }
+//!
+//! pub struct SpeechUnderstanding {
+//!     pub text: String,                              // Transcribed text context
+//!     pub intents: Vec<Intent>,                     // Extracted intents
+//!     pub entities: HashMap<String, Vec<Entity>>,  // Extracted entities
+//!     pub confidence: f32,                        // Overall confidence
+//! }
+//! ```
+//!
+//! ### Response Types
+//!
+//! - **PartialTranscription**: Interim transcription may be updated
+//! - **FinalTranscription**: Stable completed transcription
+//! - **PartialUnderstanding**: Interim NLU, preliminary intents/entities
+//! - **FinalUnderstanding**: Stable NLU output
+//!
+//! ## Error Handling
+//!
+//! Handle errors at request level or API/NLU layer:
+//!
+//! ```rust
+//! # #[cfg(feature = "blocking")] {
+//! # use wit_owo::prelude::*;
+//! # use bytes::Bytes;
+//! # dotenvy::dotenv().ok();
+//! # let token = std::env::var("WIT_API_TOKEN").unwrap();
+//! # let client = WitClient::new(&token);
+//! # let audio_data = std::fs::read("assets/test.wav").unwrap_or_else(|_| vec![0u8; 1024]);
+//! # let query = SpeechQuery::new(Encoding::Wav, AudioSource::Buffered(Bytes::from(audio_data)));
+//! match client.post_blocking_speech(query) {
+//!     Ok(results) => {
+//!         // Process successful responses
+//!         for resp in results {
+//!             println!("Result: {:?}", resp);
+//!         }
+//!     }
+//!     Err(ApiError::RequestError(e)) => {
+//!         eprintln!("Network error: {}", e);
+//!     }
+//!     Err(ApiError::WitError(werr)) => {
+//!         eprintln!("Wit.ai error: {}", werr);
+//!     }
+//!     Err(ApiError::SerializationError(e)) => {
+//!         eprintln!("Response parse error: {}", e);
+//!     }
+//!     Err(e) => {
+//!         eprintln!("Unexpected error: {}", e);
+//!     }
+//! }
+//! # }
+//! ```
+//!
+//! ## Performance Tips
+//!
+//! ### Large File Processing
+//!
+//! - Use streaming mode for files > 5 MB
+//! - Chunk size of 1–5 MB for balanced throughput
+//! - Offload audio encoding to background threads
+//!
+//! ### Real-Time Applications
+//!
+//! - Use smaller chunk sizes (512–2048 bytes)
+//! - Buffer and debounce partial results for smooth UI
+//! - Implement retry logic on transient failures
+//!
+//! ### Memory Optimization
+//!
+//! Prefer streaming audio sources to avoid loading entire file:
+//!
+//! ```rust
+//! # #[cfg(feature = "async")]
+//! # {
+//! use wit_owo::prelude::*;
+//! use bytes::Bytes;
+//! // For large data, use this pattern to create a streaming source
+//! let audio_stream = futures::stream::iter(
+//!     (0..3).map(|_i| {
+//!         let chunk = vec![0u8; 256]; // Small chunks for demo
+//!         Ok::<Bytes, _>(Bytes::from(chunk))
+//!     })
+//! );
+//! let query = SpeechQuery::new(Encoding::Raw, AudioSource::Stream(Box::pin(audio_stream)))
+//!     .with_bits(16)
+//!     .with_sample_rate(16000)
+//!     .with_raw_encoding("signed-integer".to_string());
+//! // Just construct the query, don't actually send it in doctest
+//! assert_eq!(query.encoding, Encoding::Raw);
+//! # }
+//! ```
+//!
+//! ## Feature Flags
+//!
+//! In `Cargo.toml`, enable the desired modes:
+//!
+//! ```toml
+//! [dependencies]
+//! wit_owo = { version = "1.0", features = ["async", "blocking"] }
+//! ```
+//!
+//! - `async`: Asynchronous streaming API
+//! - `blocking`: Synchronous batch API
+//!
+//! ## Troubleshooting
+//!
+//! **Invalid audio format**:
+//! - Verify file integrity
+//! - Match file extension with encoding
+//!
+//! **Authentication failed**:
+//! - Check API token validity
+//! - Ensure proper environment variable
+//!
+//! **No audio detected**:
+//! - Confirm audio length > 100 ms
+//! - Validate sample rate/channel configuration
+//!
+//! **Low confidence**:
+//! - Improve audio quality
+//! - Increase bit depth and sample rate
+//!
+//! ## Advanced Usage
+//!
+//! ### Custom Audio Sources
+//!
+//! Supply your own streams or buffers:
+//!
+//! ```rust,no_run
+//! # use wit_owo::prelude::*;
+//! # use bytes::Bytes;
+//! // From Vec<u8>
+//! let my_vec = vec![0u8; 1024]; // Example audio data
+//! let buf_source = AudioSource::Buffered(Bytes::from(my_vec));
+//!
+//! // From custom async stream (example pattern - actual implementation would vary)
+//! // let my_stream = my_custom_stream_source();
+//! // let stream_source = AudioSource::Stream(Box::pin(my_stream));
+//!
+//! # // Verify the source is constructed correctly
+//! # match buf_source { AudioSource::Buffered(_) => {}, _ => panic!("Wrong type") }
+//! ```
+//!
+//! ### Integrations
+//!
+//! Works with popular Rust audio crates:
+//! - `hound` for WAV file reading/writing
+//! - `rodio` or `cpal` for real-time capture/playback
+//! - `lewton` for Ogg decoding
+//!
+
 use crate::error::{ApiError, WitError};
 use crate::model::speech::{SpeechQuery, SpeechResponse, SpeechTranscription, SpeechUnderstanding};
 use crate::prelude::WitClient;

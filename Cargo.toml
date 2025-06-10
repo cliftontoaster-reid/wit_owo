@@ -1,6 +1,6 @@
 [package]
 name = "wit_owo"
-version = "1.1.5"
+version = "1.2.1"
 edition = "2024"
 authors = ["Clifton Toaster Reid <clifton.toaster.reid@proton.me>"]
 categories = ["api-bindings", "text-processing"]

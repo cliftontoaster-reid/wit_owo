@@ -87,6 +87,8 @@
 //! # }
 //! # #[cfg(feature = "blocking")]
 //! # fn main() { let _ = example(); }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() { }
 //! ```
 //!
 //! ### Example 2: Streaming Transcription (Async)
@@ -134,6 +136,8 @@
 //! # #[cfg(feature = "async")]
 //! # #[tokio::main]
 //! # async fn main() { let _ = example().await; }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() { }
 //! ```
 //!
 //! ### Example 3: Real-time Audio Stream Processing
@@ -180,6 +184,8 @@
 //! # #[cfg(feature = "async")]
 //! # #[tokio::main]
 //! # async fn main() { let _ = example().await; }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() { }
 //! ```
 //!
 //! ### Example 4: Raw Audio Processing
@@ -219,6 +225,8 @@
 //! # }
 //! # #[cfg(feature = "blocking")]
 //! # fn main() { let _ = example(); }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() { }
 //! ```
 //!
 //! ## Audio Format Guidelines
@@ -311,9 +319,9 @@
 //!
 //! ### Common Error Scenarios
 //!
-//! ```rust,should_panic
+//! ```rust,no_run
 //! # #[cfg(feature = "blocking")]
-//! # async fn example() {
+//! # fn example() {
 //! use wit_owo::prelude::*;
 //! # use dotenvy::dotenv;
 //! # use std::env;
@@ -349,8 +357,9 @@
 //! }
 //! # }
 //! # #[cfg(feature = "blocking")]
-//! # #[tokio::main]
-//! # async fn main() { example().await; }
+//! # fn main() { example(); }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() { }
 //! ```
 //!
 //! ## Performance Tips
@@ -388,6 +397,8 @@
 //! #     let rt = tokio::runtime::Runtime::new().unwrap();
 //! #     let _ = rt.block_on(example());
 //! # }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() { }
 //! ```
 //!
 //! ## Feature Flags
@@ -432,7 +443,7 @@
 //!
 //! Enable debug output to see request details:
 //!
-//! ```rust
+//! ```text
 //! // The library automatically prints debug information in debug builds
 //! // Look for "Request" and "Received complete JSON" messages
 //! ```
@@ -447,6 +458,7 @@
 //! # fn example() {
 //! use wit_owo::prelude::*;
 //! use bytes::Bytes;
+//! # #[cfg(feature = "async")]
 //! use futures::stream;
 //!
 //! # fn get_audio_from_somewhere() -> Vec<u8> { vec![] }
@@ -473,19 +485,17 @@
 //!
 //! The dictation API works well with popular Rust audio libraries:
 //!
-//! ```rust
-//! // With `rodio` for audio playback/recording
-//! // With `cpal` for cross-platform audio I/O
-//! // With `hound` for WAV file processing
-//! ```
+//! - With `rodio` for audio playback/recording
+//! - With `cpal` for cross-platform audio I/O
+//! - With `hound` for WAV file processing
 //!
 //! For more examples and integration patterns, see the test cases in this module.
 
 use crate::error::ApiError;
 use crate::model::dictation::{Dictation, DictationQuery};
+use crate::prelude::BASE_URL;
 use crate::prelude::WitClient;
 use crate::utils::json::extract_complete_json;
-use crate::{error::WitError, prelude::BASE_URL};
 use url::Url;
 
 #[cfg(feature = "async")]
@@ -569,6 +579,7 @@ impl WitClient {
     &self,
     params: DictationQuery,
   ) -> impl Stream<Item = Result<Dictation, ApiError>> {
+    use crate::error::WitError;
     use async_stream::try_stream;
 
     try_stream! {

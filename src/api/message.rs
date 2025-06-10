@@ -18,6 +18,8 @@
 //! ### Basic Usage
 //!
 //! ```no_run
+//! # #[cfg(feature = "async")]
+//! # {
 //! use wit_owo::model::client::WitClient;
 //! # use std::env;
 //!
@@ -41,6 +43,7 @@
 //! }
 //!
 //! # main().unwrap();
+//! # }
 //! ```
 //!
 //! ### Using MessageQuery for Advanced Options
@@ -48,6 +51,8 @@
 //! For more control over the request, use the `MessageQuery` struct:
 //!
 //! ```no_run
+//! # #[cfg(feature = "async")]
+//! # {
 //! use wit_owo::model::{client::WitClient, message::MessageQuery};
 //! # use std::env;
 //!
@@ -69,6 +74,7 @@
 //! }
 //!
 //! # main().unwrap();
+//! # }
 //! ```
 //!
 //! ### Synchronous API (blocking feature)
@@ -110,6 +116,8 @@
 //! The `Message` struct contains all the processed information from Wit.ai:
 //!
 //! ```no_run
+//! # #[cfg(feature = "async")]
+//! # {
 //! use wit_owo::model::{client::WitClient, message::Message};
 //!
 //! async fn process_message(client: &WitClient, text: &str) -> Result<(), Box<dyn std::error::Error>> {
@@ -150,6 +158,7 @@
 //! #     let client = WitClient::new("test_token");
 //! #     let _ = process_message(&client, "test message").await;
 //! # });
+//! # }
 //! ```
 //!
 //! ## Advanced Features
@@ -159,6 +168,8 @@
 //! Dynamic entities allow you to provide context-specific entity values at request time:
 //!
 //! ```no_run
+//! # #[cfg(feature = "async")]
+//! # {
 //! use wit_owo::model::{
 //!     client::WitClient,
 //!     message::MessageQuery,
@@ -204,6 +215,7 @@
 //! }
 //!
 //! # tokio::runtime::Runtime::new().unwrap().block_on(use_dynamic_entities()).unwrap();
+//! # }
 //! ```
 //!
 //! ### Error Handling
@@ -211,6 +223,8 @@
 //! The API returns detailed error information when requests fail:
 //!
 //! ```no_run
+//! # #[cfg(feature = "async")]
+//! # {
 //! use wit_owo::{model::client::WitClient, error::ApiError};
 //! # use std::env;
 //!
@@ -240,6 +254,7 @@
 //! }
 //!
 //! # tokio::runtime::Runtime::new().unwrap().block_on(handle_errors());
+//! # }
 //! ```
 //!
 //! ## Best Practices
@@ -271,6 +286,8 @@
 //! Always check confidence scores when processing intents:
 //!
 //! ```no_run
+//! # #[cfg(feature = "async")]
+//! # {
 //! # use wit_owo::model::client::WitClient;
 //! # async fn example(client: &WitClient) -> Result<(), wit_owo::error::ApiError> {
 //! let message = client.get_message("book a table").await?;
@@ -287,12 +304,15 @@
 //! }
 //! # Ok(())
 //! # }
+//! # }
 //! ```
 //!
 //! ### 4. **Batch Processing**
 //! For multiple messages, process them concurrently:
 //!
 //! ```no_run
+//! # #[cfg(feature = "async")]
+//! # {
 //! use futures::future::join_all;
 //! use wit_owo::model::{client::WitClient, message::Message};
 //! # use std::env;
@@ -317,6 +337,7 @@
 //! #     let messages = vec!["hello", "world"];
 //! #     let _ = process_multiple_messages(&client, messages).await;
 //! # });
+//! # }
 //! ```
 //!
 //! ## Feature Flags
