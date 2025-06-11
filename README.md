@@ -22,6 +22,68 @@ The goal of this crate is to provide a feature-full yet easy to use client for W
 - **Flexible** 🤸: The client is designed to be used in many ways, allowing you to use it in any way you see fit.
 - **Safe** 🛡️: The client is designed to be as safe as possible, making use when possible of strict types, as well as enums to ensure that you can't make mistakes.
 
+## Cargo Features
+
+This crate supports multiple feature flags to customize functionality based on your needs:
+
+### `async` (default)
+
+Enables asynchronous API support using the Tokio runtime. This feature provides:
+
+- **Non-blocking operations**: All API calls return futures that can be awaited
+- **Tokio integration**: Full compatibility with Tokio-based applications
+- **Stream processing**: Support for async streams when handling continuous data
+- **Concurrent requests**: Ability to make multiple API calls concurrently
+
+```toml
+[dependencies]
+wit_owo = "1.1.5"  # async feature enabled by default
+```
+
+### `blocking`
+
+Enables synchronous (blocking) API support for simpler use cases:
+
+- **Synchronous operations**: Traditional blocking API calls
+- **No async/await required**: Simpler code for basic use cases
+- **Thread-safe**: Can be used safely across multiple threads
+
+```toml
+[dependencies]
+wit_owo = { version = "1.1.5", features = ["blocking"] }
+```
+
+### Using both features
+
+You can enable both async and blocking features simultaneously:
+
+```toml
+[dependencies]
+wit_owo = { version = "1.1.5", features = ["async", "blocking"] }
+```
+
+This allows you to use both synchronous and asynchronous APIs in the same application, choosing the most appropriate one for each use case.
+
+## Documentation & Tutorials
+
+📚 **Comprehensive tutorials and examples are available on [docs.rs](https://docs.rs/wit_owo)**
+
+The documentation includes detailed tutorials for all major functionality:
+
+- **Message API Tutorial**: Step-by-step guides for natural language understanding, intent recognition, entity extraction, and dynamic entities
+- **Dictation API Tutorial**: Complete examples for speech-to-text transcription, audio format handling, streaming, and batch processing
+- **Speech API Tutorial**: Instructions for text-to-speech synthesis, voice configuration, and audio generation
+
+Each tutorial includes:
+
+- ✨ **Quick start examples** for immediate usage
+- 🔧 **Advanced configuration** options and best practices
+- 📖 **Real-world use cases** and practical applications
+- ⚡ **Both async and blocking** code examples
+- 🛡️ **Error handling** patterns and troubleshooting
+
+Start with the [API module documentation](https://docs.rs/wit_owo/latest/wit_owo/api/) for an overview of all available tutorials.
+
 ## Legal Notice
 
 This project is licensed under both the MIT and Apache 2.0 licences. You can find the full text of the licences in the [`LICENSE-MIT`](./LICENCE-MIT) and [`LICENSE-APACHE`](./LICENCE-APACHE) files respectively. You are therefore allowed to use this project in any way you see fit, as long as you respect the terms of the licenses you decide to align with.
@@ -55,7 +117,7 @@ wit_owo = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 - ❌ POST `/event`
 
-- ❌ POST `/speech`
+- ⚠️ POST `/speech`
 
 - ✔️ GET `/message`
 

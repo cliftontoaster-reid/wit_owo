@@ -7,6 +7,7 @@ pub use crate::model::{
   entities::Entity,
   intents::Intent,
   message::{Message, MessageQuery},
+  speech::{SpeechQuery, SpeechResponse, SpeechTranscription, SpeechUnderstanding},
   traits::Trait,
 };
 pub use url::Url;

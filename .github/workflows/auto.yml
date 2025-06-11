@@ -1,116 +1,161 @@
+permissions:
+  contents: write
+  pull-requests: write
+
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - v1.*.x
     paths:
       - src/**
+      - tools/**
       - Cargo.toml
       - Cargo.lock
-      - .trunk/**
       - .github/workflows/auto.yml
   pull_request:
-    branches: [main]
-    paths:
-      - src/**
-      - Cargo.toml
-      - Cargo.lock
-      - .trunk/**
-      - .github/workflows/auto.yml
-  schedule:
-    # Every Monday, Wednesday, and Friday at 00:00 UTC
-    - cron: 0 0 * * 1,3,5
-permissions:
-  contents: write # allow commits+pushing
-  pull-requests: write # allow PRs
+    branches:
+      - main
+      - v1.*.x
+
 jobs:
-  auto-update:
-    if: ${{ github.event_name != 'pull_request' || github.actor != 'github-actions[bot]' }}
-    runs-on: ubuntu-latest
-    env:
-      BRANCH: update-msrv-${{ github.run_id }}
+  detect-msrv:
+    name: Detect MSRV
+    runs-on: ${{ matrix.os }}
+    if: github.actor != 'UwUpdate[bot]'
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    outputs:
+      msrv: ${{ steps.msrv-output.outputs.msrv }}
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          persist-credentials: true # so git push is allowed
-          fetch-depth: 0 # full history for safe rebasing, etc.
 
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1.0.7
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly
           override: true
-          components: clippy
 
-      - name: Cache cargo target directory
+      - name: Prepare build cache
         uses: actions/cache@v4
         with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            target
+            ${{ runner.os == 'Windows' && '~\\.cargo\\registry' || '~/.cargo/registry' }}
+            ${{ runner.os == 'Windows' && '~\\.cargo\\git' || '~/.cargo/git' }}
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run cargo update and clippy
+      - name: Install additional tools
         run: |
-          cargo update --verbose
-          cargo clippy --all-targets --all-features -- -D warnings
-          # IF the update breaks the build, we should use git reset to
-          # revert the changes to Cargo.lock and exit with an error
-          # to prevent the PR from being created.
-          if [ $? -ne 0 ]; then
-            echo "Update broke the build, reverting changes to Cargo.lock"
-            git reset --hard HEAD
-            exit 1
-          fi
+          rustup component add clippy
+          cargo install cargo-msrv
 
-      - name: Cache cargo-msrv binary
-        uses: actions/cache@v4
-        id: msrv-cache
-        with:
-          path: ~/.cargo/bin/cargo-msrv
-          key: ${{ runner.os }}-cargo-msrv
+      - name: Run update
+        run: |
+          cargo update
 
-      - name: Install cargo-msrv (if not cached)
-        if: steps.msrv-cache.outputs.cache-hit != 'true'
-        run: cargo install cargo-msrv
-
-      - name: Find and set MSRV
+      - name: Updating minimum supported Rust version
+        id: msrv-detection
+        shell: bash
         run: |
           set -o pipefail
-          # run find, grab the version after “MSRV:”
+
+          # run find, grab the version after "MSRV:"
           MSRV=$(cargo msrv find --include-all-patch-releases 2>&1 \
                 | awk '/MSRV:/ {print $2}' \
                 | sed -E 's/\x1B\[[0-9;]*[mK]//g')
           echo "🕵️ Detected MSRV: $MSRV"
-          # now set it
-          cargo msrv set "$MSRV"
-      - name: Install Trunk CLI
+          echo "msrv=$MSRV" >> $GITHUB_OUTPUT
+
+      - name: Output MSRV for collection
+        id: msrv-output
+        shell: bash
         run: |
-          curl -sSLf https://trunk.io/releases/trunk -o trunk
-          chmod +x trunk
-          mkdir -p "$HOME/.cargo/bin"
-          mv trunk "$HOME/.cargo/bin"
-          trunk install
+          echo "msrv=${{ steps.msrv-detection.outputs.msrv }}" >> $GITHUB_OUTPUT
 
-      - name: Format code with Trunk
-        run: trunk fmt
+      - name: Check for breaking changes
+        run: cargo clippy --all-targets --all-features -- -D warnings
 
-      - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+  validate-msrv:
+    name: Validate MSRV
+    runs-on: ubuntu-latest
+    needs: detect-msrv
+    if: github.actor != 'UwUpdate[bot]' && success()
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "chore: update MSRV and dependencies"
-          committer: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-          author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
-          branch: ${{ env.BRANCH }}
-          base: main
-          title: "chore: update MSRV and dependencies"
-          body: |
-            This pull request updates the MSRV detected by cargo-msrv and updates dependencies.
+          toolchain: nightly
+          override: true
 
-            ## Changes
-            - Updated dependencies via `cargo update`
-            - Updated MSRV to latest compatible version
-            - Applied code formatting with Trunk
+      - name: Install cargo-msrv
+        run: cargo install cargo-msrv
 
-            This PR was created automatically by GitHub Actions.
-          draft: false
-          delete-branch: true
+      - name: Collect and compare MSRV versions
+        id: compare-msrv
+        shell: bash
+        run: |
+          # Extract MSRV values from the matrix jobs
+          # Note: GitHub Actions doesn't directly support collecting outputs from matrix jobs
+          # We'll re-run MSRV detection to ensure consistency
+
+          echo "🔍 Re-detecting MSRV to ensure consistency across all targets..."
+          DETECTED_MSRV=$(cargo msrv find --include-all-patch-releases 2>&1 \
+                          | awk '/MSRV:/ {print $2}' \
+                          | sed -E 's/\x1B\[[0-9;]*[mK]//g')
+
+          echo "🕵️ Final detected MSRV: $DETECTED_MSRV"
+          echo "highest_msrv=$DETECTED_MSRV" >> $GITHUB_OUTPUT
+
+      - name: Set final MSRV
+        shell: bash
+        run: |
+          HIGHEST_MSRV="${{ steps.compare-msrv.outputs.highest_msrv }}"
+          echo "📌 Setting MSRV to: $HIGHEST_MSRV"
+          cargo msrv set "$HIGHEST_MSRV"
+
+      - name: Verify MSRV is correctly set
+        shell: bash
+        run: |
+          # Verify the MSRV was set correctly by checking Cargo.toml
+          if grep -q "rust-version" Cargo.toml; then
+            CURRENT_MSRV=$(grep "rust-version" Cargo.toml | sed 's/.*"\(.*\)".*/\1/')
+            echo "✅ MSRV set in Cargo.toml: $CURRENT_MSRV"
+
+            # Ensure it matches what we expected
+            if [ "$CURRENT_MSRV" = "${{ steps.compare-msrv.outputs.highest_msrv }}" ]; then
+              echo "✅ MSRV verification successful"
+            else
+              echo "❌ MSRV mismatch: expected ${{ steps.compare-msrv.outputs.highest_msrv }}, got $CURRENT_MSRV"
+              exit 1
+            fi
+          else
+            echo "⚠️ No rust-version found in Cargo.toml"
+            exit 1
+          fi
+
+      - name: Apply update
+        run: cargo update
+
+      - name: Commit MSRV changes if needed
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          git config --local user.email "clifton.toaster.reid@proton.me"
+          git config --local user.name "UwUpdate[bot]"
+
+          if git diff --quiet; then
+            echo "📋 No MSRV changes to commit"
+          else
+            git add Cargo.toml Cargo.lock
+            git commit -m "chore: update MSRV to ${{ steps.compare-msrv.outputs.highest_msrv }}"
+            git push
+            echo "✅ MSRV changes committed and pushed"
+          fi

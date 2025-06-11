@@ -1,8 +1,501 @@
+//! # Wit.ai Dictation API
+//!
+//! This module provides a comprehensive interface for performing speech-to-text transcription
+//! using the Wit.ai dictation API. The dictation API converts audio data into text with
+//! support for both streaming and batch processing modes.
+//!
+//! ## Overview
+//!
+//! The dictation API supports:
+//! - **Multiple audio formats**: WAV, MP3, OGG, μ-law, and raw PCM audio
+//! - **Streaming transcription**: Real-time processing of audio streams
+//! - **Batch transcription**: Processing of complete audio files
+//! - **Asynchronous and blocking modes**: Choose based on your application needs
+//! - **Partial and final results**: Get intermediate results during long transcriptions
+//!
+//! ## Supported Audio Formats
+//!
+//! | Format | Description | Content-Type |
+//! |--------|-------------|--------------|
+//! | WAV    | Waveform Audio File Format | `audio/wav` |
+//! | MP3    | MPEG Audio Layer III | `audio/mpeg3` |
+//! | OGG    | Ogg Vorbis audio format | `audio/ogg` |
+//! | μ-law  | µ-law algorithm (telephony) | `audio/ulaw` |
+//! | Raw    | Raw PCM audio data | `audio/raw;encoding=...` |
+//!
+//! ## Getting Started
+//!
+//! ### Prerequisites
+//!
+//! 1. **Wit.ai Account**: Sign up at [wit.ai](https://wit.ai) and create an app
+//! 2. **API Token**: Get your server access token from your app settings
+//! 3. **Audio Data**: Prepare your audio files or streams
+//!
+//! ### Basic Setup
+//!
+//! ```rust
+//! use wit_owo::prelude::*;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! // Initialize the client with your Wit.ai token
+//! let client = WitClient::new(&token);
+//! # let _ = client; // Hide the actual usage
+//! ```
+//!
+//! ## Quick Start Examples
+//!
+//! ### Example 1: Simple File Transcription (Blocking)
+//!
+//! ```rust
+//! # #[cfg(feature = "blocking")]
+//! # fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! use wit_owo::prelude::*;
+//! use std::fs::File;
+//! use std::io::Read;
+//! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! // Initialize client
+//! let client = WitClient::new(&token);
+//!
+//! // Read audio file
+//! let mut file = File::open("audio.wav")?;
+//! let mut audio_data = Vec::new();
+//! file.read_to_end(&mut audio_data)?;
+//!
+//! // Create dictation query
+//! let query = DictationQuery::new(
+//!     Encoding::Wav,
+//!     AudioSource::Buffered(Bytes::from(audio_data))
+//! );
+//!
+//! // Perform transcription
+//! let results = client.post_blocking_dictation(query)?;
+//!
+//! // Process results
+//! for dictation in results {
+//!     println!("Transcription: {}", dictation.text);
+//!     println!("Confidence: {:.2}", dictation.speech.confidence);
+//! }
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "blocking")]
+//! # fn main() { let _ = example(); }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() { }
+//! ```
+//!
+//! ### Example 2: Streaming Transcription (Async)
+//!
+//! ```rust
+//! # #[cfg(feature = "async")]
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! use wit_owo::prelude::*;
+//! use futures::stream::StreamExt;
+//! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! let client = WitClient::new(&token);
+//!
+//! // Load audio data
+//! let audio_data = std::fs::read("audio.wav")?;
+//! let query = DictationQuery::new(
+//!     Encoding::Wav,
+//!     AudioSource::Buffered(Bytes::from(audio_data))
+//! );
+//!
+//! // Get streaming results
+//! let mut stream = Box::pin(client.post_dictation(query).await);
+//!
+//! while let Some(result) = stream.next().await {
+//!     match result {
+//!         Ok(dictation) => {
+//!             match dictation.speech_type {
+//!                 SpeechType::PartialTranscription => {
+//!                     println!("Partial: {}", dictation.text);
+//!                 }
+//!                 SpeechType::FinalTranscription => {
+//!                     println!("Final: {}", dictation.text);
+//!                 }
+//!             }
+//!         }
+//!         Err(e) => eprintln!("Error: {}", e),
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "async")]
+//! # #[tokio::main]
+//! # async fn main() { let _ = example().await; }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() { }
+//! ```
+//!
+//! ### Example 3: Real-time Audio Stream Processing
+//!
+//! ```rust
+//! # #[cfg(feature = "async")]
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! use wit_owo::prelude::*;
+//! use futures::stream::{self, StreamExt};
+//! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! let client = WitClient::new(&token);
+//!
+//! // Create a stream of audio chunks (e.g., from microphone)
+//! let audio_data = std::fs::read("audio.wav")?;
+//! let chunk_size = 1024;
+//!
+//! let audio_stream = stream::iter(
+//!     audio_data
+//!         .chunks(chunk_size)
+//!         .map(|chunk| Ok::<Bytes, reqwest::Error>(Bytes::copy_from_slice(chunk)))
+//!         .collect::<Vec<_>>()
+//! );
+//!
+//! let query = DictationQuery::new(
+//!     Encoding::Wav,
+//!     AudioSource::Stream(Box::pin(audio_stream))
+//! );
+//!
+//! let mut stream = Box::pin(client.post_dictation(query).await);
+//!
+//! while let Some(result) = stream.next().await {
+//!     match result {
+//!         Ok(dictation) => println!("Live: {}", dictation.text),
+//!         Err(e) => eprintln!("Stream error: {}", e),
+//!     }
+//! }
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "async")]
+//! # #[tokio::main]
+//! # async fn main() { let _ = example().await; }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() { }
+//! ```
+//!
+//! ### Example 4: Raw Audio Processing
+//!
+//! For raw audio data, you need to specify additional parameters:
+//!
+//! ```rust
+//! # #[cfg(feature = "blocking")]
+//! # fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! use wit_owo::prelude::*;
+//! use bytes::Bytes;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! let client = WitClient::new(&token);
+//!
+//! // Raw audio data (8kHz, 8-bit, mono, unsigned-integer)
+//! let raw_audio = std::fs::read("audio.raw")?;
+//!
+//! let query = DictationQuery::new(
+//!     Encoding::Raw,
+//!     AudioSource::Buffered(Bytes::from(raw_audio))
+//! )
+//! .with_raw_encoding("unsigned-integer".to_string())
+//! .with_bits(8)
+//! .with_sample_rate(8000)
+//! .with_endian(true); // little-endian
+//!
+//! let results = client.post_blocking_dictation(query)?;
+//!
+//! for dictation in results {
+//!     println!("Raw audio transcription: {}", dictation.text);
+//! }
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "blocking")]
+//! # fn main() { let _ = example(); }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() { }
+//! ```
+//!
+//! ## Audio Format Guidelines
+//!
+//! ### Recommended Settings
+//!
+//! For best transcription quality:
+//!
+//! - **Sample Rate**: 16kHz or higher (8kHz minimum)
+//! - **Bit Depth**: 16-bit or higher
+//! - **Channels**: Mono preferred, stereo supported
+//! - **Format**: WAV or FLAC for highest quality, MP3 for smaller files
+//!
+//! ### Format-Specific Notes
+//!
+//! #### WAV Files
+//! - Most reliable format
+//! - Supports various bit depths and sample rates
+//! - No compression artifacts
+//!
+//! #### MP3 Files
+//! - Good compression ratio
+//! - Widely supported
+//! - Some quality loss due to compression
+//!
+//! #### Raw PCM Audio
+//! - Requires explicit format specification
+//! - Highest quality when properly configured
+//! - Most flexible but requires more setup
+//!
+//! ```rust
+//! // Raw audio configuration example
+//! # fn example() {
+//! # use wit_owo::prelude::*;
+//! # let audio_source = AudioSource::Buffered(bytes::Bytes::new());
+//! let query = DictationQuery::new(Encoding::Raw, audio_source)
+//!     .with_raw_encoding("signed-integer".to_string())  // or "unsigned-integer"
+//!     .with_bits(16)                                    // 8, 16, 24, or 32
+//!     .with_sample_rate(16000)                         // Hz
+//!     .with_endian(true);                              // true=little, false=big
+//! # let _ = query; // Hide the actual usage
+//! # }
+//! # fn main() { example(); }
+//! ```
+//!
+//! ## Understanding Transcription Results
+//!
+//! ### Dictation Structure
+//!
+//! Each `Dictation` result contains:
+//!
+//! ```rust
+//! # use wit_owo::prelude::*;
+//! # fn example() {
+//! # // These are just type demonstrations
+//! # let _unused_speech = Speech { confidence: 0.0, tokens: vec![] };
+//! # let _unused_text = String::new();
+//! # let _unused_speech_type = SpeechType::PartialTranscription;
+//! pub struct Dictation {
+//!     pub speech: Speech,           // Detailed transcription info
+//!     pub text: String,             // The transcribed text
+//!     pub speech_type: SpeechType,  // Partial or Final
+//! }
+//!
+//! pub struct Speech {
+//!     pub confidence: f32,          // Confidence score (0.0-1.0)
+//!     pub tokens: Vec<Token>,       // Individual word tokens
+//! }
+//!
+//! pub struct Token {
+//!     pub start: usize,             // Start position
+//!     pub end: usize,               // End position
+//!     pub token: String,            // The word/token text
+//! }
+//! # }
+//! ```
+//!
+//! ### Result Types
+//!
+//! - **Partial Results**: Intermediate transcriptions that may change
+//! - **Final Results**: Completed transcriptions that won't change
+//!
+//! ### Confidence Scoring
+//!
+//! - **0.0 - 0.5**: Low confidence, may need review
+//! - **0.5 - 0.8**: Medium confidence, generally reliable
+//! - **0.8 - 1.0**: High confidence, very reliable
+//!
+//! ## Error Handling
+//!
+//! ### Common Error Scenarios
+//!
+//! ```rust,no_run
+//! # #[cfg(feature = "blocking")]
+//! # fn example() {
+//! use wit_owo::prelude::*;
+//! # use dotenvy::dotenv;
+//! # use std::env;
+//! # let audio_source = AudioSource::Buffered(bytes::Bytes::new());
+//!
+//! # dotenv().ok();
+//! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
+//! let client = WitClient::new(&token);
+//! let query = DictationQuery::new(Encoding::Wav, audio_source);
+//!
+//! match client.post_blocking_dictation(query) {
+//!     Ok(results) => {
+//!         // Process successful results
+//!         for dictation in results {
+//!             println!("Success: {}", dictation.text);
+//!         }
+//!     }
+//!     Err(ApiError::RequestError(e)) => {
+//!         eprintln!("Network error: {}", e);
+//!         // Handle network connectivity issues
+//!     }
+//!     Err(ApiError::WitError(wit_error)) => {
+//!         eprintln!("Wit.ai API error: {}", wit_error);
+//!         // Handle API-specific errors (invalid token, quota exceeded, etc.)
+//!     }
+//!     Err(ApiError::SerializationError(json_error)) => {
+//!         eprintln!("JSON parsing error: {}", json_error);
+//!         // Handle response parsing issues
+//!     }
+//!     Err(e) => {
+//!         eprintln!("Other error: {}", e);
+//!     }
+//! }
+//! # }
+//! # #[cfg(feature = "blocking")]
+//! # fn main() { example(); }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() { }
+//! ```
+//!
+//! ## Performance Tips
+//!
+//! ### For Large Files
+//! - Use streaming mode for files > 10MB
+//! - Process in chunks of 1-5MB for optimal performance
+//! - Consider audio compression before upload
+//!
+//! ### For Real-time Applications
+//! - Use smaller chunk sizes (512-2048 bytes)
+//! - Buffer partial results for smoother user experience
+//! - Implement reconnection logic for network interruptions
+//!
+//! ### Memory Optimization
+//! ```rust
+//! # #[cfg(feature = "async")]
+//! # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+//! # use wit_owo::prelude::*;
+//! # fn create_audio_stream(file_path: &str) -> Result<AudioSource, Box<dyn std::error::Error>> {
+//! #     let data = std::fs::read(file_path)?;
+//! #     Ok(AudioSource::Buffered(bytes::Bytes::from(data)))
+//! # }
+//! // For large files, prefer streaming over buffering
+//! let audio_stream = create_audio_stream("large_file.wav")?;
+//! let query = DictationQuery::new(
+//!     Encoding::Wav,
+//!     audio_stream  // Uses less memory
+//! );
+//! # let _ = query; // Hide the actual usage
+//! # Ok(())
+//! # }
+//! # #[cfg(feature = "async")]
+//! # fn main() {
+//! #     let rt = tokio::runtime::Runtime::new().unwrap();
+//! #     let _ = rt.block_on(example());
+//! # }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() { }
+//! ```
+//!
+//! ## Feature Flags
+//!
+//! The dictation API supports conditional compilation:
+//!
+//! - `async`: Enables asynchronous streaming functionality
+//! - `blocking`: Enables synchronous blocking functionality
+//!
+//! Configure in your `Cargo.toml`:
+//!
+//! ```toml
+//! [dependencies]
+//! wit_owo = { version = "1.0", features = ["async", "blocking"] }
+//! ```
+//!
+//! ## Troubleshooting
+//!
+//! ### Common Issues
+//!
+//! 1. **"Invalid audio format"**
+//!    - Verify audio file isn't corrupted
+//!    - Check if format matches specified encoding
+//!    - Try converting to WAV format
+//!
+//! 2. **"Authentication failed"**
+//!    - Verify your Wit.ai token is correct
+//!    - Check token permissions in Wit.ai dashboard
+//!    - Ensure token hasn't expired
+//!
+//! 3. **"No audio detected"**
+//!    - Check audio file contains actual audio data
+//!    - Verify volume levels aren't too low
+//!    - Ensure audio duration is sufficient (>100ms)
+//!
+//! 4. **Poor transcription quality**
+//!    - Use higher sample rates (16kHz+)
+//!    - Reduce background noise
+//!    - Ensure clear speech with good pronunciation
+//!
+//! ### Debug Mode
+//!
+//! Enable debug output to see request details:
+//!
+//! ```text
+//! // The library automatically prints debug information in debug builds
+//! // Look for "Request" and "Received complete JSON" messages
+//! ```
+//!
+//! ## Advanced Usage
+//!
+//! ### Custom Audio Sources
+//!
+//! You can implement custom audio sources by converting your data to the appropriate format:
+//!
+//! ```rust
+//! # fn example() {
+//! use wit_owo::prelude::*;
+//! use bytes::Bytes;
+//! # #[cfg(feature = "async")]
+//! use futures::stream;
+//!
+//! # fn get_audio_from_somewhere() -> Vec<u8> { vec![] }
+//! # let audio_chunks: Vec<Vec<u8>> = vec![];
+//! // From a custom buffer
+//! let custom_buffer: Vec<u8> = get_audio_from_somewhere();
+//! let audio_source = AudioSource::Buffered(Bytes::from(custom_buffer));
+//!
+//! // From a custom stream
+//! # #[cfg(feature = "async")]
+//! # {
+//! let custom_stream = stream::iter(
+//!     audio_chunks.into_iter().map(|chunk| Ok(Bytes::from(chunk)))
+//! );
+//! let audio_source = AudioSource::Stream(Box::pin(custom_stream));
+//! # drop(audio_source); // Hide the actual usage
+//! # }
+//! # drop(audio_source); // Hide the actual usage
+//! # }
+//! # fn main() { example(); }
+//! ```
+//!
+//! ### Integrating with Audio Libraries
+//!
+//! The dictation API works well with popular Rust audio libraries:
+//!
+//! - With `rodio` for audio playback/recording
+//! - With `cpal` for cross-platform audio I/O
+//! - With `hound` for WAV file processing
+//!
+//! For more examples and integration patterns, see the test cases in this module.
+
 use crate::error::ApiError;
 use crate::model::dictation::{Dictation, DictationQuery};
+use crate::prelude::BASE_URL;
 use crate::prelude::WitClient;
 use crate::utils::json::extract_complete_json;
-use crate::{error::WitError, prelude::BASE_URL};
 use url::Url;
 
 #[cfg(feature = "async")]
@@ -40,10 +533,14 @@ impl WitClient {
   /// use futures::stream::StreamExt;
   /// use std::fs::File;
   /// use std::io::Read;
+  /// # use dotenvy::dotenv;
+  /// # use std::env;
   ///
   /// # async fn example() -> Result<(), Box<dyn std::error::Error>> {
+  /// # dotenv().ok();
+  /// # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
   /// // Initialize the Wit.ai client with your token
-  /// let client = WitClient::new("your_token_here");
+  /// let client = WitClient::new(&token);
   ///
   /// // Load audio data from a file (WAV format in this example)
   /// let mut file = File::open("path/to/audio.wav")?;
@@ -73,12 +570,16 @@ impl WitClient {
   /// }
   /// # Ok(())
   /// # }
+  /// # #[cfg(feature = "async")]
+  /// # #[tokio::main]
+  /// # async fn main() { let _ = example().await; }
   /// ```
   #[cfg(feature = "async")]
   pub async fn post_dictation(
     &self,
     params: DictationQuery,
   ) -> impl Stream<Item = Result<Dictation, ApiError>> {
+    use crate::error::WitError;
     use async_stream::try_stream;
 
     try_stream! {
@@ -161,10 +662,14 @@ impl WitClient {
   /// use bytes::Bytes;
   /// use std::fs::File;
   /// use std::io::Read;
+  /// # use dotenvy::dotenv;
+  /// # use std::env;
   ///
   /// # fn example() -> Result<(), Box<dyn std::error::Error>> {
+  /// # dotenv().ok();
+  /// # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not found");
   /// // Initialize the Wit.ai client with your token
-  /// let client = WitClient::new("your_token_here");
+  /// let client = WitClient::new(&token);
   ///
   /// // Load audio data from a file (WAV format in this example)
   /// let mut file = File::open("path/to/audio.wav")?;
@@ -189,6 +694,8 @@ impl WitClient {
   /// }
   /// # Ok(())
   /// # }
+  /// # #[cfg(feature = "blocking")]
+  /// # fn main() { let _ = example(); }
   /// ```
   #[cfg(feature = "blocking")]
   pub fn post_blocking_dictation(

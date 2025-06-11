@@ -18,7 +18,7 @@ pub struct Coordinates {
 ///
 /// At the same absolute instant, “today” will be resolved differently depending
 /// on the user’s timezone.
-#[derive(Serialize, Deserialize, Default, Debug)]
+#[derive(Serialize, Deserialize, Default, Debug, Clone)]
 pub struct Context {
   /// Local date and time of the user in ISO 8601 / RFC 3339 format.
   /// Do not use UTC here. Example: `"2014-10-30T12:18:45-07:00"`.
