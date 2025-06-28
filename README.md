@@ -117,11 +117,11 @@ wit_owo = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 - ❌ POST `/event`
 
-- ⚠️ POST `/speech`
+- ✔️ POST `/speech`
 
 - ✔️ GET `/message`
 
-- ⚠️ POST `/dictation`
+- ✔️ POST `/dictation`
 
 - ❌ POST `/synthesize`
 
@@ -199,9 +199,9 @@ wit_owo = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 - ❌ POST `/import`
 
-- ❌ GET `/voices`
+- ✔️ GET `/voices`
 
-- ❌ GET `/voices/:voice`
+- ✔️ GET `/voices/:voice`
 
 ## Example
 
