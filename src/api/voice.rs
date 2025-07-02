@@ -46,6 +46,9 @@
 //! ```no_run
 //! use wit_owo::model::client::WitClient;
 //! # use std::env;
+//!
+//! # #[cfg(feature = "blocking")]
+//! # fn main() {
 //! # dotenvy::dotenv().ok();
 //! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not set");
 //! let client = WitClient::new(&token);
@@ -55,6 +58,11 @@
 //!
 //! let voice = client.get_voice_blocking(&voices[0].name).unwrap();
 //! println!("Voice details: {:?}", voice);
+//! # }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() {
+//! #     println!("Please enable the 'blocking' feature to use synchronous API calls.");
+//! # }
 //! ```
 //!
 //! ## Working with Voice Features
@@ -62,6 +70,8 @@
 //! ```no_run
 //! # use wit_owo::model::client::WitClient;
 //! # use std::env;
+//! # #[cfg(feature = "blocking")]
+//! # fn main() {
 //! # dotenvy::dotenv().ok();
 //! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not set");
 //! let client = WitClient::new(&token);
@@ -84,6 +94,11 @@
 //!     .iter()
 //!     .filter(|v| v.gender == "female")
 //!     .collect();
+//! # }
+//! # #[cfg(not(feature = "blocking"))]
+//! # fn main() {
+//! #     println!("Please enable the 'blocking' feature to use synchronous API calls.");
+//! # }
 //! ```
 
 use crate::constants::BASE_URL;

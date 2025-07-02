@@ -266,11 +266,13 @@
 //! use std::env;
 //! use wit_owo::model::client::WitClient;
 //!
+//! # fn main() {
 //! # dotenvy::dotenv().ok();
 //! let token = env::var("WIT_API_TOKEN")
 //!     .expect("WIT_API_TOKEN environment variable not set");
 //! let client = WitClient::new(&token);
 //! # let _ = client; // Suppress unused variable warning
+//! # }
 //! ```
 //!
 //! ### 2. **Message Length Limits**
@@ -278,8 +280,11 @@
 //!
 //! ```no_run
 //! use wit_owo::model::message::MessageQuery;
+//! # fn main() {
 //! // This will panic if the message is too long
 //! let query = MessageQuery::new("your message here".to_string());
+//! # let _ = query; // Suppress unused variable warning
+//! # }
 //! ```
 //!
 //! ### 3. **Intent Confidence Thresholds**
