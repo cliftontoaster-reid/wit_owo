@@ -22,16 +22,23 @@
 //! use wit_owo::model::client::WitClient;
 //! # use std::env;
 //!
+//! # #[tokio::main]
+//! # #[cfg(feature = "async")]
+//! # async fn main() {
 //! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not set");
 //! let client = WitClient::new(&token);
 //!
 //! // List all voices (returns a flat list from all locales)
-//! let voices = client.get_voices().await?;
+//! let voices = client.get_voices().await.unwrap();
 //! println!("Available voices: {:?}", voices);
 //!
 //! // Get a specific voice
-//! let voice = client.get_voice(&voices[0].name).await?;
+//! let voice = client.get_voice(&voices[0].name).await.unwrap();
 //! println!("Voice details: {:?}", voice);
+//! # }
+//! # #[cfg(not(feature = "async"))]
+//! # fn main() {}
+//! # main();
 //! ```
 //!
 //! ## Quick Start (Blocking)
@@ -43,10 +50,10 @@
 //! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not set");
 //! let client = WitClient::new(&token);
 //!
-//! let voices = client.get_voices_blocking()?;
+//! let voices = client.get_voices_blocking().unwrap();
 //! println!("Available voices: {:?}", voices);
 //!
-//! let voice = client.get_voice_blocking(&voices[0].name)?;
+//! let voice = client.get_voice_blocking(&voices[0].name).unwrap();
 //! println!("Voice details: {:?}", voice);
 //! ```
 //!
@@ -58,7 +65,7 @@
 //! # dotenvy::dotenv().ok();
 //! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not set");
 //! let client = WitClient::new(&token);
-//! let voices = client.get_voices_blocking()?;
+//! let voices = client.get_voices_blocking().unwrap();
 //!
 //! // Find voices that support specific features
 //! let voices_with_pitch_control: Vec<_> = voices
