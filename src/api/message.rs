@@ -266,11 +266,13 @@
 //! use std::env;
 //! use wit_owo::model::client::WitClient;
 //!
+//! # fn main() {
 //! # dotenvy::dotenv().ok();
 //! let token = env::var("WIT_API_TOKEN")
 //!     .expect("WIT_API_TOKEN environment variable not set");
 //! let client = WitClient::new(&token);
 //! # let _ = client; // Suppress unused variable warning
+//! # }
 //! ```
 //!
 //! ### 2. **Message Length Limits**
@@ -278,8 +280,11 @@
 //!
 //! ```no_run
 //! use wit_owo::model::message::MessageQuery;
+//! # fn main() {
 //! // This will panic if the message is too long
 //! let query = MessageQuery::new("your message here".to_string());
+//! # let _ = query; // Suppress unused variable warning
+//! # }
 //! ```
 //!
 //! ### 3. **Intent Confidence Thresholds**
@@ -289,7 +294,7 @@
 //! # #[cfg(feature = "async")]
 //! # {
 //! # use wit_owo::model::client::WitClient;
-//! # async fn example(client: &WitClient) -> Result<(), wit_owo::error::ApiError> {
+//! # async fn main(client: &WitClient) -> Result<(), wit_owo::error::ApiError> {
 //! let message = client.get_message("book a table").await?;
 //!
 //! for intent in &message.intents {
@@ -395,7 +400,8 @@ impl WitClient {
   ///
   /// ```no_run
   /// # use wit_owo::model::client::WitClient;
-  /// # async fn example() -> Result<(), wit_owo::error::ApiError> {
+  /// # #[tokio::main]
+  /// # async fn main() -> Result<(), wit_owo::error::ApiError> {
   /// let client = WitClient::new("YOUR_TOKEN");
   /// let response = client.get_message("Hello world").await?;
   /// println!("{}", response.text);
@@ -435,7 +441,7 @@ impl WitClient {
   ///
   /// ```no_run
   /// # use wit_owo::model::client::WitClient;
-  /// # fn example() -> Result<(), wit_owo::error::ApiError> {
+  /// # fn main() -> Result<(), wit_owo::error::ApiError> {
   /// let client = WitClient::new("YOUR_TOKEN");
   /// let response = client.get_message_blocking("Hello world")?;
   /// println!("{}", response.text);

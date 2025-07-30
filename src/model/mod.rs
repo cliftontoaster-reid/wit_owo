@@ -22,3 +22,7 @@ pub mod dictation;
 
 /// This module contains the structures related to the speech returned by the Wit.ai API.
 pub mod speech;
+/// This module contains the structures related to the voices returned by the Wit.ai API.
+pub mod voice;
+
+pub mod synthesize;

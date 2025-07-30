@@ -1,7 +1,7 @@
 name: Rust Continuous Testing Integration
 on:
   push:
-    branches: [main]
+    branches: [main, v*.*.x]
     paths:
       - src/**
       - Cargo.toml
@@ -10,7 +10,7 @@ on:
       - .trunk/**
       - .github/workflows/rust.yml
   pull_request:
-    branches: [main]
+    branches: [main, v*.*.x]
     paths:
       - src/**
       - Cargo.toml
@@ -18,10 +18,46 @@ on:
       - assets/**
       - .trunk/**
       - .github/workflows/rust.yml
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 permissions:
-  contents: write # allow commits+pushing
+  contents: read
+
 jobs:
-  build:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly
+          override: true
+          components: clippy
+
+      - name: Cache cargo dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Run clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  test:
+    name: Test
+    needs: lint
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
@@ -30,26 +66,39 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install DENO
-        uses: denoland/setup-deno@v2
-        with:
-          deno-version: v2.x
-
       - name: Set up Rust
-        uses: actions-rs/toolchain@v1.0.7
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: nightly
           override: true
           components: clippy
 
-      - name: Cache cargo target directory
+      - name: Cache cargo dependencies
         uses: actions/cache@v4
         with:
-          path: target
-          key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
-      - name: Run comprehensive tests with Deno script
-        run: deno run --allow-read --allow-run publish.ts
+      - name: Install DENO
+        if: runner.os == 'Linux'
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Run comprehensive tests (Linux)
+        if: runner.os == 'Linux'
+        run: deno run --allow-read --allow-run --allow-write --allow-net publish.ts
         working-directory: tools/
+        env:
+          WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}
+
+      - name: Run sanity tests (Windows/macOS)
+        if: runner.os != 'Linux'
+        run: cargo test --all-features
         env:
           WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}

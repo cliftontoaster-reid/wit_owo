@@ -20,3 +20,5 @@
 pub mod dictation;
 pub mod message;
 pub mod speech;
+pub mod synthesize;
+pub mod voice;

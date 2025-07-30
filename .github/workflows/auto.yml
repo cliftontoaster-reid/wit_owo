@@ -49,10 +49,23 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
+      - name: Cache cargo binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.os == 'Windows' && '~\\.cargo\\bin' || '~/.cargo/bin' }}
+          key: ${{ runner.os }}-cargo-binaries-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-binaries-
+
       - name: Install additional tools
         run: |
           rustup component add clippy
-          cargo install cargo-msrv
+          if ! command -v cargo-msrv &> /dev/null; then
+            echo "Installing cargo-msrv..."
+            cargo install cargo-msrv
+          else
+            echo "cargo-msrv already installed"
+          fi
 
       - name: Run update
         run: |
@@ -95,8 +108,22 @@ jobs:
           toolchain: nightly
           override: true
 
+      - name: Cache cargo binaries
+        uses: actions/cache@v4
+        with:
+          path: ${{ runner.os == 'Windows' && '~\\.cargo\\bin' || '~/.cargo/bin' }}
+          key: ${{ runner.os }}-cargo-binaries-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-binaries-
+
       - name: Install cargo-msrv
-        run: cargo install cargo-msrv
+        run: |
+          if ! command -v cargo-msrv &> /dev/null; then
+            echo "Installing cargo-msrv..."
+            cargo install cargo-msrv
+          else
+            echo "cargo-msrv already installed"
+          fi
 
       - name: Collect and compare MSRV versions
         id: compare-msrv
