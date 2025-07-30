@@ -123,7 +123,7 @@ wit_owo = { git = "https://github.com/cliftontoaster-reid/wit_owo.git" }
 
 - ✔️ POST `/dictation`
 
-- ❌ POST `/synthesize`
+- ⚠️ POST `/synthesize`
 
 - ❌ GET `/language`
 
