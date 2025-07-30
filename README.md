@@ -37,7 +37,7 @@ Enables asynchronous API support using the Tokio runtime. This feature provides:
 
 ```toml
 [dependencies]
-wit_owo = "1.1.5"  # async feature enabled by default
+wit_owo = "1.3.1"  # async feature enabled by default
 ```
 
 ### `blocking`
@@ -50,7 +50,7 @@ Enables synchronous (blocking) API support for simpler use cases:
 
 ```toml
 [dependencies]
-wit_owo = { version = "1.1.5", features = ["blocking"] }
+wit_owo = { version = "1.3.1", features = ["blocking"] }
 ```
 
 ### Using both features
@@ -59,7 +59,7 @@ You can enable both async and blocking features simultaneously:
 
 ```toml
 [dependencies]
-wit_owo = { version = "1.1.5", features = ["async", "blocking"] }
+wit_owo = { version = "1.3.1", features = ["async", "blocking"] }
 ```
 
 This allows you to use both synchronous and asynchronous APIs in the same application, choosing the most appropriate one for each use case.

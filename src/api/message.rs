@@ -294,7 +294,7 @@
 //! # #[cfg(feature = "async")]
 //! # {
 //! # use wit_owo::model::client::WitClient;
-//! # async fn example(client: &WitClient) -> Result<(), wit_owo::error::ApiError> {
+//! # async fn main(client: &WitClient) -> Result<(), wit_owo::error::ApiError> {
 //! let message = client.get_message("book a table").await?;
 //!
 //! for intent in &message.intents {
@@ -400,7 +400,8 @@ impl WitClient {
   ///
   /// ```no_run
   /// # use wit_owo::model::client::WitClient;
-  /// # async fn example() -> Result<(), wit_owo::error::ApiError> {
+  /// # #[tokio::main]
+  /// # async fn main() -> Result<(), wit_owo::error::ApiError> {
   /// let client = WitClient::new("YOUR_TOKEN");
   /// let response = client.get_message("Hello world").await?;
   /// println!("{}", response.text);
@@ -440,7 +441,7 @@ impl WitClient {
   ///
   /// ```no_run
   /// # use wit_owo::model::client::WitClient;
-  /// # fn example() -> Result<(), wit_owo::error::ApiError> {
+  /// # fn main() -> Result<(), wit_owo::error::ApiError> {
   /// let client = WitClient::new("YOUR_TOKEN");
   /// let response = client.get_message_blocking("Hello world")?;
   /// println!("{}", response.text);

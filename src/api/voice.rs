@@ -36,9 +36,6 @@
 //! let voice = client.get_voice(&voices[0].name).await.unwrap();
 //! println!("Voice details: {:?}", voice);
 //! # }
-//! # #[cfg(not(feature = "async"))]
-//! # fn main() {}
-//! # main();
 //! ```
 //!
 //! ## Quick Start (Blocking)
