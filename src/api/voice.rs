@@ -25,6 +25,7 @@
 //! # #[tokio::main]
 //! # #[cfg(feature = "async")]
 //! # async fn main() {
+//! # dotenvy::dotenv().ok();
 //! # let token = env::var("WIT_API_TOKEN").expect("WIT_API_TOKEN not set");
 //! let client = WitClient::new(&token);
 //!
@@ -38,7 +39,6 @@
 //! # }
 //! # #[cfg(not(feature = "async"))]
 //! # fn main() {}
-//! # main();
 //! ```
 //!
 //! ## Quick Start (Blocking)
