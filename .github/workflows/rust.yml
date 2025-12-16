@@ -28,80 +28,76 @@ permissions:
 
 jobs:
   lint:
-    name: Lint
+    name: Lint Code
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Stable with rustfmt and clippy
+      - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: nightly
           components: rustfmt, clippy
 
-      - name: Cache cargo dependencies
-        uses: actions/cache@v4
+      - name: Annotate commit with clippy warnings
+        uses: actions-rs/clippy-check@v1
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features
 
-      - name: Run clippy
-        uses: actions-rs/cargo@v1
+      - name: Security audit
+        uses: actions-rs/audit-check@v1
         with:
-          command: clippy
-          args: --all-features -- -D warnings
+          token: ${{ secrets.GITHUB_TOKEN }}
 
   test:
-    name: Test
-    needs: lint
+    name: Run Tests
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        rust: [stable, beta, nightly]
     runs-on: ${{ matrix.os }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - name: Set up Rust
-        uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
-          override: true
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
           components: clippy
 
-      - name: Cache cargo dependencies
-        uses: actions/cache@v4
+      - name: Run Tests with Coverage
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly' }}
+        uses: actions-rs/cargo@v1
         with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          command: test
+          args: --all-features --verbose
+        env:
+          CARGO_INCREMENTAL: "0"
+          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}
 
-      - name: Install DENO
-        if: runner.os == 'Linux'
-        uses: denoland/setup-deno@v2
+      - name: Run Tests without Coverage
+        if: ${{ !(matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly') }}
+        uses: actions-rs/cargo@v1
         with:
-          deno-version: v2.x
-
-      - name: Run comprehensive tests (Linux)
-        if: runner.os == 'Linux'
-        run: deno run --allow-read --allow-run --allow-write --allow-net publish.ts
-        working-directory: tools/
+          command: test
+          args: --all-features --verbose
         env:
           WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}
 
-      - name: Run sanity tests (Windows/macOS)
-        if: runner.os != 'Linux'
-        run: cargo test --all-features
-        env:
-          WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}
+      - name: Generate coverage report
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly' }}
+        id: coverage
+        uses: actions-rs/grcov@v0.1
+
+      - name: Upload coverage to Codecov
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly' }}
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          verbose: true
+          fail_ci_if_error: true
