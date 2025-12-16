@@ -9,7 +9,7 @@ on:
       - assets/**
       - .trunk/**
       - .github/workflows/rust.yml
-      - .github/action-rs/**
+      - .github/actions-rs/**
   pull_request:
     branches: [main, v*.*.x]
     paths:
@@ -19,7 +19,7 @@ on:
       - assets/**
       - .trunk/**
       - .github/workflows/rust.yml
-      - .github/action-rs/**
+      - .github/actions-rs/**
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
