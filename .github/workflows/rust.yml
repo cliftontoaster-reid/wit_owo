@@ -74,6 +74,10 @@ jobs:
       - name: Ensure proper Rust version is used
         run: rustup default ${{ matrix.rust }}
 
+      - name: Install LLVM tools for coverage
+        if: ${{ matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly' }}
+        run: rustup component add llvm-tools-preview
+
       - name: Run Tests with Coverage
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly' }}
         uses: actions-rs/cargo@v1
@@ -82,8 +86,9 @@ jobs:
           args: --all-features --verbose
         env:
           CARGO_INCREMENTAL: "0"
-          RUSTFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
-          RUSTDOCFLAGS: "-Zprofile -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTFLAGS: "-Zinstrument-coverage -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTDOCFLAGS: "-Zinstrument-coverage -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          LLVM_PROFILE_FILE: "./target/coverage-%p-%m.profraw"
           WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}
 
       - name: Run Tests without Coverage
