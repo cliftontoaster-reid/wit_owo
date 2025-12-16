@@ -71,6 +71,9 @@ jobs:
           toolchain: ${{ matrix.rust }}
           components: clippy
 
+      - name: Ensure proper Rust version is used
+        run: rustup default ${{ matrix.rust }}
+
       - name: Run Tests with Coverage
         if: ${{ matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly' }}
         uses: actions-rs/cargo@v1
