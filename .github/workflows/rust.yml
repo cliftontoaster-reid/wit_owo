@@ -55,7 +55,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-  test:
+  check:
     name: Run Tests
     needs: lint
     strategy:
@@ -71,17 +71,43 @@ jobs:
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
-          components: clippy
+          components: clippy, rustfmt
 
-      - name: Ensure proper Rust version is used
-        run: rustup default ${{ matrix.rust }}
+      - name: Build
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --all-features --verbose
 
-      - name: Install LLVM tools for coverage
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly' }}
-        run: rustup component add llvm-tools-preview
+      - name: Run Clippy per OS/Rust version
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features -- -D warnings
+
+      - name: Compile tests, but do not run
+        uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --no-run --verbose
+
+  test:
+    name: Run Tests
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: nightly
+          components: clippy, llvm-tools-preview
+
+      - name: Set Rust to Nightly
+        run: |
+          rustup default nightly
 
       - name: Run Tests with Coverage
-        if: ${{ matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly' }}
         uses: actions-rs/cargo@v1
         with:
           command: test
@@ -91,15 +117,6 @@ jobs:
           RUSTFLAGS: "-Cinstrument-coverage -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
           RUSTDOCFLAGS: "-Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
           LLVM_PROFILE_FILE: "./target/coverage-%p-%m.profraw"
-          WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}
-
-      - name: Run Tests without Coverage
-        if: ${{ !(matrix.os == 'ubuntu-latest' && matrix.rust == 'nightly') }}
-        uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features --verbose
-        env:
           WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}
 
       - name: Generate coverage report
