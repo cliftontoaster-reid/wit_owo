@@ -86,8 +86,8 @@ jobs:
           args: --all-features --verbose
         env:
           CARGO_INCREMENTAL: "0"
-          RUSTFLAGS: "-Zinstrument-coverage -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
-          RUSTDOCFLAGS: "-Zinstrument-coverage -Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTFLAGS: "-Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
+          RUSTDOCFLAGS: "-Ccodegen-units=1 -Cinline-threshold=0 -Clink-dead-code -Coverflow-checks=off -Cpanic=abort -Zpanic_abort_tests"
           LLVM_PROFILE_FILE: "./target/coverage-%p-%m.profraw"
           WIT_API_TOKEN: ${{ secrets.WIT_API_TOKEN }}
 
